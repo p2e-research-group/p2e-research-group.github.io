@@ -170,7 +170,16 @@ def extract_patents(source: str) -> list[dict]:
         if number in numbers:
             raise ExtractionError(f"{context}: duplicate row number {number}")
         numbers.add(number)
-        title = nonempty(one(by_class(row, "title"), context + " title").text(), context)
+        title_cell = one(by_class(row, "title"), context + " title")
+        # Compare the Korean original, not an original + display-translation join.
+        # Legacy reference markup is plain Korean; bilingual markup is explicit.
+        if by_class(title_cell, "lang-ko") or by_class(title_cell, "lang-en"):
+            original = one(by_class(title_cell, "lang-ko"), context + " original title")
+            translation = one(by_class(title_cell, "lang-en"), context + " translated title")
+            nonempty(translation.text(), context + " translated title")
+            title = nonempty(original.text(), context + " original title")
+        else:
+            title = nonempty(title_cell.text(), context + " title")
         cell = one(by_class(row, "pubno"), context + " identifiers")
         ids = patent_identifiers(row, cell, context)
         for kind, value in ids.items():

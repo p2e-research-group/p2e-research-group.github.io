@@ -36,6 +36,29 @@ class ExtractionTests(unittest.TestCase):
         self.assertEqual(self.original["patents"][9]["publication"], "1020250017619")
         self.assertEqual(self.original["patents"][10]["registration"], "103029668")
 
+    def test_bilingual_patent_title_preserves_original_comparison(self):
+        title = self.original["patents"][0]["title"]
+        bilingual = f'<span class="lang-ko">{title}</span><span class="lang-en">Display translation</span>'
+        self.pages["ip.html"] = self.pages["ip.html"].replace(title, bilingual, 1)
+        self.assertEqual(check.compare(self.original, check.extract(self.pages)), [])
+        self.pages["ip.html"] = self.pages["ip.html"].replace(title, "수정된 원제목", 1)
+        diffs = check.compare(self.original, check.extract(self.pages))
+        self.assertEqual([d["field"] for d in diffs], ["patents[1].title"])
+        self.assertEqual(diffs[0]["reference"], "수정된 원제목")
+
+    def test_incomplete_or_ambiguous_bilingual_patent_title_fails(self):
+        title = self.original["patents"][0]["title"]
+        ko = f'<span class="lang-ko">{title}</span>'
+        en = '<span class="lang-en">Display translation</span>'
+        for markup in [ko, en, ko + ko + en, ko + en + en,
+                       ko + '<span class="lang-en"></span>',
+                       '<span class="lang-ko"></span>' + en]:
+            with self.subTest(markup=markup):
+                pages = copy.deepcopy(FIXTURE["pages"])
+                pages["ip.html"] = pages["ip.html"].replace(title, markup, 1)
+                with self.assertRaises(check.ExtractionError):
+                    check.extract(pages)
+
     def test_r1_bilingual_heading_is_not_an_affiliation_value(self):
         block = check.Document(self.pages["people.html"]).root
         self.assertEqual(len(check.by_class(block, "lang-ko")), 2)
