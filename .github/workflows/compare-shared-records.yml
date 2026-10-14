@@ -1,0 +1,32 @@
+name: Compare shared public records
+
+on:
+  schedule:
+    - cron: '17 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Compare pinned main snapshots (read only)
+        run: >-
+          python -B tools/compare_shared_records.py online
+          --output "$RUNNER_TEMP/shared-public-records.json"
+          --summary "$GITHUB_STEP_SUMMARY"
+      - name: Preserve comparison result, including failures and deferrals
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-public-records-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/shared-public-records.json
+          if-no-files-found: error
+          retention-days: 30
