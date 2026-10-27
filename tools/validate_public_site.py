@@ -223,8 +223,14 @@ def main() -> int:
     if publications.count('class="publication-item"') != 13:
         errors.append("publications.html: expected 13 publication records")
     ip_page = (ROOT / "ip.html").read_text(encoding="utf-8")
-    if len(re.findall(r'<tr><td class="no">', ip_page)) != 23:
+    if len(re.findall(r'<td(?: role="cell")? class="no">', ip_page)) != 23:
         errors.append("ip.html: expected 23 public registry records")
+    try:
+        from build_ip_portfolio import load_data, render
+        if render(ip_page, load_data(ROOT)) != ip_page:
+            errors.append('ip.html: generated portfolio differs from verified source data')
+    except (ValueError, AssertionError, KeyError, OSError) as exc:
+        errors.append(f'IP portfolio validation failed: {exc}')
 
     try:
         sitemap = ET.parse(ROOT / "sitemap.xml")
