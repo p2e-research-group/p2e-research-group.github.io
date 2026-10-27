@@ -236,9 +236,58 @@ def extract_center(source: str) -> dict[str, str]:
     return result
 
 
+def extract_linked_patents(source: str) -> list[dict]:
+    """Read visible international records, retaining the domestic parent relation."""
+    root = Document(source).root
+    records, applications, publications = [], set(), set()
+    parent_rows = {normalize(one(by_class(row, 'no'), 'domestic parent').text()): row
+                   for row in root.elements() if row.tag == 'tr' and by_class(row, 'no')}
+    for item in by_class(root, 'ip-linked-record'):
+        fields = {}
+        for name in ('parent', 'jurisdiction', 'application', 'publication', 'aliases', 'stage', 'event-date'):
+            value = item.attrs.get('data-' + name)
+            if value is None or (not value and name != 'aliases'):
+                raise ExtractionError(f'international record: missing {name}')
+            fields[name.replace('-', '_')] = normalize(value)
+        parent = parent_rows.get(fields['parent'])
+        if parent is None or not any(e is item for e in parent.elements()):
+            raise ExtractionError('international record detached from its domestic parent')
+        application = (fields['jurisdiction'], key(fields['application']))
+        if application in applications:
+            raise ExtractionError('duplicate international application')
+        applications.add(application)
+        if fields['jurisdiction'] not in ('US','JP','CN','EP','WO'):
+            raise ExtractionError('unknown international jurisdiction')
+        if fields['stage'] not in ('granted','published','allowed','pct_published'):
+            raise ExtractionError('unknown international stage')
+        if (fields['jurisdiction'] == 'WO') != (fields['stage'] == 'pct_published'):
+            raise ExtractionError('PCT publication must remain separate from national/regional grants')
+        for value in [fields['publication'], *filter(None,fields['aliases'].split('|'))]:
+            if value in publications or not value.startswith(fields['jurisdiction']):
+                raise ExtractionError('duplicate or conflicting international publication')
+            publications.add(value)
+        publication = one(by_class(item,'ip-publication'),'international publication link')
+        if normalize(publication.text()) != fields['publication']:
+            raise ExtractionError('visible international identifier conflicts with data')
+        stage = one(by_class(item,'ip-stage'),'international stage')
+        expected = {'granted':('등록공보','Granted'),'published':('공개','Published'),
+                    'allowed':('등록결정 안내','Allowance notice'),'pct_published':('PCT 국제공개','PCT publication')}
+        for lang, value in zip(('ko','en'), expected[fields['stage']]):
+            actual = normalize(one(by_class(stage,'lang-'+lang),'international bilingual stage').text())
+            if actual != value:
+                raise ExtractionError('international stage conflicts with visible bilingual label')
+        fields['publication_url'] = publication.attrs.get('href','')
+        fields['evidence_url'] = one(by_class(item,'ip-source'),'international evidence link').attrs.get('href','')
+        if not all(fields[name].startswith('https://') for name in ('publication_url','evidence_url')):
+            raise ExtractionError('missing public international evidence link')
+        records.append(fields)
+    return records
+
+
 def extract(pages: dict[str, str]) -> dict:
     try:
         return {"patents": extract_patents(pages["ip.html"]),
+                "linked_patents": extract_linked_patents(pages["ip.html"]),
                 "publications": extract_publications(pages["publications.html"]),
                 "center": extract_center(pages["people.html"])}
     except KeyError as exc:
@@ -255,11 +304,12 @@ def compare(official: dict, reference: dict) -> list[dict]:
         if not same:
             differences.append({"field": path, "official": left, "reference": right})
 
-    for collection in ("patents", "publications"):
-        add(f"{collection}.count", len(official[collection]), len(reference[collection]))
-        for i, (left, right) in enumerate(zip_longest(official[collection], reference[collection]), 1):
+    for collection in ("patents", "linked_patents", "publications"):
+        left_records, right_records = official.get(collection, []), reference.get(collection, [])
+        add(f"{collection}.count", len(left_records), len(right_records))
+        for i, (left, right) in enumerate(zip_longest(left_records, right_records), 1):
             path = f"{collection}[{i}]"
-            if collection == "patents" and left is not None and right is not None:
+            if collection in ("patents", "linked_patents") and left is not None and right is not None:
                 for field_name in left:
                     add(f"{path}.{field_name}", left[field_name], right[field_name])
             else:
@@ -330,7 +380,7 @@ def online(reader=None) -> dict:
         try:
             pages = {name: reader.page(source["repository"], source["sha"], name) for name in FILES}
             source["records"] = extract(pages)
-            source["counts"] = {k: len(source["records"][k]) for k in ("patents", "publications")}
+            source["counts"] = {k: len(source["records"][k]) for k in ("patents", "linked_patents", "publications")}
         except (RemoteUnavailable, ExtractionError) as exc:
             kind = "DEFERRED" if isinstance(exc, RemoteUnavailable) else "EXTRACTION_ERROR"
             result["errors"].append({"source": side, "kind": kind, "message": str(exc)})
@@ -384,7 +434,7 @@ def main(argv=None) -> int:
         print(f"[shared-records] {line}")
     if args.mode == "extract" and result["status"] == "EXTRACTED":
         print("[shared-records] Extracted " + json.dumps({k: len(result['records'][k])
-              for k in ('patents', 'publications')}))
+              for k in ('patents', 'linked_patents', 'publications')}))
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
