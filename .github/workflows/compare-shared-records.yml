@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.x"
       - name: Compare pinned main snapshots (read only)
@@ -24,7 +24,7 @@ jobs:
           --summary "$GITHUB_STEP_SUMMARY"
       - name: Preserve comparison result, including failures and deferrals
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: shared-public-records-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/shared-public-records.json
