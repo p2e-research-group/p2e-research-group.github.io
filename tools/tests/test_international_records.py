@@ -68,7 +68,7 @@ class InternationalRecordsTests(unittest.TestCase):
 
     def test_historical_html_without_foreign_records_still_extracts(self):
         fixture=json.loads((ROOT/'tools/tests/fixtures/shared-records-20261014.json').read_text())
-        self.assertEqual(check.extract(fixture['pages'])['linked_patents'],[])
+        self.assertEqual(check.extract_records(fixture['pages'])['linked_patents'],[])
 
 if __name__ == '__main__':
     unittest.main()

@@ -22,7 +22,7 @@ REPOSITORIES = {
     "official": "p2e-research-group/p2e-research-group.github.io",
     "reference": "Dochi37-cpu/Dochi37-cpu.github.io",
 }
-FILES = ("ip.html", "publications.html", "people.html")
+FILES = ("ip.html", "publications.html", "people.html", "data/ip-portfolio.json")
 EXIT_CODES = {"MATCH": 0, "EXTRACTED": 0, "MISMATCH": 1,
               "EXTRACTION_ERROR": 2, "DEFERRED": 3}
 VOID = set("area base br col embed hr img input link meta param source track wbr".split())
@@ -284,7 +284,8 @@ def extract_linked_patents(source: str) -> list[dict]:
     return records
 
 
-def extract(pages: dict[str, str]) -> dict:
+def extract_records(pages: dict[str, str]) -> dict:
+    """Extract the original record scope, independently of portfolio display."""
     try:
         return {"patents": extract_patents(pages["ip.html"]),
                 "linked_patents": extract_linked_patents(pages["ip.html"]),
@@ -292,6 +293,103 @@ def extract(pages: dict[str, str]) -> dict:
                 "center": extract_center(pages["people.html"])}
     except KeyError as exc:
         raise ExtractionError(f"missing input file: {exc}") from exc
+
+
+def extract_portfolio(source: str, data_source: str) -> dict:
+    """Check data against static display, then expose only the shared display fields."""
+    try:
+        data = json.loads(data_source)
+        cards, transfers = data["cards"], data["technology_transfers"]
+        if not isinstance(cards, list) or len(cards) != 4:
+            raise ExtractionError("portfolio: expected four technology areas")
+        if (not isinstance(transfers, list) or len(transfers) != 1
+                or type(transfers[0]["parent"]) is not int or transfers[0]["parent"] != 1):
+            raise ExtractionError("portfolio: expected one transfer note for patent 1")
+        root = Document(source).root
+        families = one((e for e in root.elements() if e.attrs.get("id") == "families"), "portfolio section")
+        grid = one(by_class(families, "family-grid"), "portfolio grid")
+        shown_cards = by_class(root, "family-card")
+        if len(shown_cards) != len(cards) or by_class(grid, "family-card") != shown_cards:
+            raise ExtractionError("portfolio: missing, extra or detached technology area")
+
+        def bilingual(node, context):
+            return {"label_" + lang: nonempty(one(by_class(node, "lang-" + lang),
+                    context + " " + lang).text(), context) for lang in ("ko", "en")}
+
+        def agree(actual, expected, context):
+            same = key(actual) == key(expected) if isinstance(actual, str) and isinstance(expected, str) else actual == expected
+            if not same:
+                raise ExtractionError(f"{context}: data/HTML conflict ({actual!r} != {expected!r})")
+
+        areas, seen_ids, seen_parents = [], set(), set()
+        for position, (card, shown) in enumerate(zip(cards, shown_cards), 1):
+            context = f"portfolio.areas[{position}]"
+            area_id = nonempty(card["id"], context + ".id")
+            parents = card["parents"]
+            if area_id in seen_ids or not isinstance(parents, list) or not parents:
+                raise ExtractionError(context + ": duplicate area id or empty/invalid member list")
+            seen_ids.add(area_id)
+            for number in parents:
+                if type(number) is not int or number < 1 or number in seen_parents:
+                    raise ExtractionError(context + ": invalid or duplicate patent placement")
+                seen_parents.add(number)
+                target = one((e for e in root.elements() if e.attrs.get("id") == f"patent-{number}"), context + " target")
+                if target.tag != "tr" or normalize(one(by_class(target, "no"), context + " row number").text()) != str(number):
+                    raise ExtractionError(context + ": link does not target its domestic record")
+            heading = one((e for e in shown.children if isinstance(e, Element) and e.tag == "h3"), context + " heading")
+            actual = {"id": shown.attrs.get("id", ""), **bilingual(heading, context), "patents": []}
+            listing = one(by_class(shown, "ip-portfolio-inventions"), context + " members")
+            for member in by_class(listing, "ip-portfolio-invention"):
+                link = one(by_class(member, "ip-invention-link"), context + " link")
+                match = re.fullmatch(r"#patent-([1-9][0-9]*)", link.attrs.get("href", ""))
+                if link.tag != "a" or match is None:
+                    raise ExtractionError(context + ": invalid patent link")
+                number = int(match[1])
+                labels = bilingual(one(by_class(link, "ip-invention-number"), context + " visible number"), context)
+                for lang, expected_label in (("ko", f"특허 {number}"), ("en", f"Record {number}")):
+                    agree(labels["label_" + lang], expected_label, context + ".visible_number." + lang)
+                actual["patents"].append(number)
+            expected = {"id": area_id, "label_ko": nonempty(card["ko"], context),
+                        "label_en": nonempty(card["en"], context), "patents": parents}
+            for field_name in expected:
+                agree(actual[field_name], expected[field_name], context + "." + field_name)
+            areas.append(actual)
+
+        transfer = transfers[0]
+        note = one(by_class(root, "ip-transfer-record"), "portfolio transfer note")
+        if note.tag != "div" or note.attrs != {"class": "ip-transfer-record", "data-transfer-parent": "1"}:
+            raise ExtractionError("portfolio transfer: preserve the plain supplementary note")
+        row = one((e for e in root.elements() if e.attrs.get("id") == "patent-1"), "transfer parent")
+        cells = [e for e in row.children if isinstance(e, Element) and e.tag == "td"]
+        if row.tag != "tr" or len(cells) != 5 or not any(e is note for e in cells[-1].elements()):
+            raise ExtractionError("portfolio transfer: note must remain in patent 1's supplementary cell")
+        if normalize(one(by_class(row, "no"), "transfer row number").text()) != "1":
+            raise ExtractionError("portfolio transfer: domestic parent number conflicts")
+        children = [e for e in note.children if isinstance(e, Element)]
+        if (len(children) != 2 or any(e.tag != "span" or list(e.elements())
+                or e.attrs not in ({"class": "lang-ko"}, {"class": "lang-en"}) for e in children)
+                or key(note.text()) != key("".join(e.text() for e in children))):
+            raise ExtractionError("portfolio transfer: expected two plain language spans")
+        labels = bilingual(note, "portfolio transfer")
+        for lang, prefix in (("ko", "기술이전: "), ("en", "Technology transfer: ")):
+            expected = prefix + nonempty(transfer["recipient_" + lang], "transfer recipient")
+            agree(labels["label_" + lang], expected, "portfolio transfer " + lang)
+            if key(root.text()).count(key(prefix)) != 1:
+                raise ExtractionError("portfolio transfer: duplicate or standalone transfer display")
+        return {"areas": areas, "technology_transfers": [{"parent": 1, **labels}]}
+    except (KeyError, TypeError, ValueError, AttributeError) as exc:
+        if isinstance(exc, ExtractionError):
+            raise
+        raise ExtractionError(f"portfolio: invalid or missing data field ({exc})") from exc
+
+
+def extract(pages: dict[str, str]) -> dict:
+    records = extract_records(pages)
+    try:
+        records["portfolio"] = extract_portfolio(pages["ip.html"], pages["data/ip-portfolio.json"])
+    except KeyError as exc:
+        raise ExtractionError(f"missing input file: {exc}") from exc
+    return records
 
 
 def compare(official: dict, reference: dict) -> list[dict]:
@@ -316,6 +414,20 @@ def compare(official: dict, reference: dict) -> list[dict]:
                 add(path + (".title" if collection == "publications" else ""), left, right)
     for lang in ("ko", "en"):
         add(f"center.{lang}", official["center"][lang], reference["center"][lang])
+
+    def display_fields(path, left, right):
+        if isinstance(left, dict) and isinstance(right, dict):
+            for name in sorted(left.keys() | right.keys()):
+                display_fields(path + "." + name, left.get(name), right.get(name))
+        elif isinstance(left, list) and isinstance(right, list):
+            add(path + ".count", len(left), len(right))
+            for i, (a, b) in enumerate(zip_longest(left, right), 1):
+                display_fields(f"{path}[{i}]", a, b)
+        else:
+            add(path, left, right)
+
+    if "portfolio" in official or "portfolio" in reference:
+        display_fields("portfolio", official.get("portfolio"), reference.get("portfolio"))
     return differences
 
 
@@ -381,6 +493,8 @@ def online(reader=None) -> dict:
             pages = {name: reader.page(source["repository"], source["sha"], name) for name in FILES}
             source["records"] = extract(pages)
             source["counts"] = {k: len(source["records"][k]) for k in ("patents", "linked_patents", "publications")}
+            source["counts"].update(portfolio_areas=len(source["records"]["portfolio"]["areas"]),
+                                    technology_transfers=len(source["records"]["portfolio"]["technology_transfers"]))
         except (RemoteUnavailable, ExtractionError) as exc:
             kind = "DEFERRED" if isinstance(exc, RemoteUnavailable) else "EXTRACTION_ERROR"
             result["errors"].append({"source": side, "kind": kind, "message": str(exc)})

@@ -21,12 +21,12 @@ FIXTURE = json.loads((Path(__file__).parent / "fixtures/shared-records-20261014.
 class ExtractionTests(unittest.TestCase):
     def setUp(self):
         self.pages = copy.deepcopy(FIXTURE["pages"])
-        self.original = check.extract(self.pages)
+        self.original = check.extract_records(self.pages)
 
     def changed(self, filename, old, new):
         self.assertIn(old, self.pages[filename])
         self.pages[filename] = self.pages[filename].replace(old, new, 1)
-        return check.compare(self.original, check.extract(self.pages))
+        return check.compare(self.original, check.extract_records(self.pages))
 
     def test_historical_fixture_counts_and_hidden_identifiers(self):
         self.assertEqual(len(self.original["patents"]), 23)
@@ -40,9 +40,9 @@ class ExtractionTests(unittest.TestCase):
         title = self.original["patents"][0]["title"]
         bilingual = f'<span class="lang-ko">{title}</span><span class="lang-en">Display translation</span>'
         self.pages["ip.html"] = self.pages["ip.html"].replace(title, bilingual, 1)
-        self.assertEqual(check.compare(self.original, check.extract(self.pages)), [])
+        self.assertEqual(check.compare(self.original, check.extract_records(self.pages)), [])
         self.pages["ip.html"] = self.pages["ip.html"].replace(title, "수정된 원제목", 1)
-        diffs = check.compare(self.original, check.extract(self.pages))
+        diffs = check.compare(self.original, check.extract_records(self.pages))
         self.assertEqual([d["field"] for d in diffs], ["patents[1].title"])
         self.assertEqual(diffs[0]["reference"], "수정된 원제목")
 
@@ -57,14 +57,14 @@ class ExtractionTests(unittest.TestCase):
                 pages = copy.deepcopy(FIXTURE["pages"])
                 pages["ip.html"] = pages["ip.html"].replace(title, markup, 1)
                 with self.assertRaises(check.ExtractionError):
-                    check.extract(pages)
+                    check.extract_records(pages)
 
     def test_r1_bilingual_heading_is_not_an_affiliation_value(self):
         block = check.Document(self.pages["people.html"]).root
         self.assertEqual(len(check.by_class(block, "lang-ko")), 2)
         self.assertEqual(self.original["center"], {"ko": "공정시스템연구센터", "en": "Process System Research Center"})
         self.pages["people.html"] = FIXTURE["reference_people"]
-        self.assertEqual(check.extract(self.pages)["center"], self.original["center"])
+        self.assertEqual(check.extract_records(self.pages)["center"], self.original["center"])
 
     def test_center_changes_in_either_language_are_detected(self):
         for lang, before, after in [("ko", "공정시스템연구센터", "다른연구센터"),
@@ -72,14 +72,14 @@ class ExtractionTests(unittest.TestCase):
             with self.subTest(lang=lang):
                 pages = copy.deepcopy(FIXTURE["pages"])
                 pages["people.html"] = pages["people.html"].replace(before, after)
-                diffs = check.compare(self.original, check.extract(pages))
+                diffs = check.compare(self.original, check.extract_records(pages))
                 self.assertEqual([d["field"] for d in diffs], [f"center.{lang}"])
                 self.assertEqual(diffs[0]["reference"], after)
 
     def test_center_not_found_by_searching_current_literal_elsewhere(self):
         self.pages["people.html"] = self.pages["people.html"].replace("공정시스템연구센터", "새로운센터")
         self.pages["people.html"] += '<section>과거 경력: 공정시스템연구센터</section>'
-        self.assertEqual(check.extract(self.pages)["center"]["ko"], "새로운센터")
+        self.assertEqual(check.extract_records(self.pages)["center"]["ko"], "새로운센터")
 
     def test_duplicate_or_missing_center_values_fail_closed(self):
         for suffix in ['<span class="lang-ko">직위<br>다른센터</span>', '']:
@@ -88,12 +88,12 @@ class ExtractionTests(unittest.TestCase):
                 value = re.search(r'<span class="lang-ko">.*?</span>', pages["people.html"]).group()
                 pages["people.html"] = pages["people.html"].replace(value, value + suffix if suffix else '')
                 with self.assertRaises(check.ExtractionError):
-                    check.extract(pages)
+                    check.extract_records(pages)
 
     def test_missing_center_line_is_not_an_empty_match(self):
         self.pages["people.html"] = self.pages["people.html"].replace('<br>공정시스템연구센터', '')
         with self.assertRaises(check.ExtractionError):
-            check.extract(self.pages)
+            check.extract_records(self.pages)
 
     def test_affiliation_source_whitespace_and_inline_formatting(self):
         self.pages['people.html'] = self.pages['people.html'].replace('선임연구원 · 한국화학연구원<br>',
@@ -101,7 +101,7 @@ class ExtractionTests(unittest.TestCase):
         self.pages['people.html'] = self.pages['people.html'].replace('Process System Research Center',
             '\n PROCESS SYSTEM\n RESEARCH CENTER \n')
         self.pages['ip.html'] = self.pages['ip.html'].replace('>Granted<', '>GRANTED<')
-        self.assertEqual(check.compare(self.original, check.extract(self.pages)), [])
+        self.assertEqual(check.compare(self.original, check.extract_records(self.pages)), [])
 
     def test_heading_and_block_ambiguity_fail(self):
         for markup in ['', self.pages["people.html"] * 2]:
@@ -134,11 +134,11 @@ class ExtractionTests(unittest.TestCase):
         self.pages = copy.deepcopy(FIXTURE['pages'])
         self.pages['ip.html'] = self.pages['ip.html'].replace('class="pubno">Reg. KR 10-1805184',
             'class="pubno" data-registration-number="KR 10-1805184">Reg. KR 10-1805184', 1)
-        self.assertEqual(check.compare(self.original, check.extract(self.pages)), [])
+        self.assertEqual(check.compare(self.original, check.extract_records(self.pages)), [])
         self.pages['ip.html'] = self.pages['ip.html'].replace('data-registration-number="KR 10-1805184"',
             'data-registration-number="KR 10-1805185"')
         with self.assertRaisesRegex(check.ExtractionError, 'conflicting registration'):
-            check.extract(self.pages)
+            check.extract_records(self.pages)
 
     def test_patent_missing_row_and_order_change(self):
         rows = re.findall(r'<tr><td class="no">.*?</tr>', self.pages['ip.html'], re.S)
@@ -146,7 +146,7 @@ class ExtractionTests(unittest.TestCase):
         self.assertIn('patents.count', [d['field'] for d in diffs])
         self.pages = copy.deepcopy(FIXTURE['pages'])
         self.pages['ip.html'] = self.pages['ip.html'].replace(rows[0], '__ROW__').replace(rows[1], rows[0]).replace('__ROW__', rows[1])
-        diffs = check.compare(self.original, check.extract(self.pages))
+        diffs = check.compare(self.original, check.extract_records(self.pages))
         self.assertIn('patents[1].title', [d['field'] for d in diffs])
         self.assertIn('patents[1].number', [d['field'] for d in diffs])
 
@@ -158,7 +158,7 @@ class ExtractionTests(unittest.TestCase):
             with self.subTest(changed=changed[:70]):
                 pages = copy.deepcopy(self.pages)
                 pages['publications.html'] = changed
-                self.assertTrue(check.compare(self.original, check.extract(pages)))
+                self.assertTrue(check.compare(self.original, check.extract_records(pages)))
 
     def test_formatting_equivalence_and_ignored_content(self):
         self.pages['ip.html'] = self.pages['ip.html'].replace('Reg. KR 10-', 'Registration No.: KR 10–')
@@ -168,13 +168,13 @@ class ExtractionTests(unittest.TestCase):
         self.pages['people.html'] = self.pages['people.html'].replace('선임연구원 · 한국화학연구원', 'Ignored role/institution')
         for page in self.pages:
             self.pages[page] = '<head><meta name="robots" content="noindex,follow"></head>' + self.pages[page] + '<aside>Different design and history</aside>'
-        self.assertEqual(check.compare(self.original, check.extract(self.pages)), [])
+        self.assertEqual(check.compare(self.original, check.extract_records(self.pages)), [])
 
     def test_same_future_records_do_not_fail_fixed_counts(self):
         new_row = '<tr><td class="no">24</td><td class="pubno">Reg. KR 10-9999999</td><td class="title">Synthetic test record</td><td><span class="status-pill"><span class="lang-ko">등록</span><span class="lang-en">Granted</span></span></td></tr>'
         self.pages['ip.html'] = self.pages['ip.html'].replace('</tbody>', new_row + '</tbody>')
         self.pages['publications.html'] = self.pages['publications.html'].replace('</div>', '<article class="publication-item"><span class="pub-title">Synthetic future paper</span></article></div>')
-        records = check.extract(self.pages)
+        records = check.extract_records(self.pages)
         self.assertEqual((len(records['patents']), len(records['publications'])), (24, 14))
         self.assertEqual(check.compare(records, copy.deepcopy(records)), [])
 
@@ -185,7 +185,7 @@ class ExtractionTests(unittest.TestCase):
                 pages = copy.deepcopy(FIXTURE['pages'])
                 pages['ip.html'] = pages['ip.html'].replace(before, after, 1)
                 with self.assertRaises(check.ExtractionError):
-                    check.extract(pages)
+                    check.extract_records(pages)
 
     def test_empty_table_title_status_and_list_fail(self):
         mutations = [('ip.html', '<tbody>', '<tbody></tbody><tbody>'),
@@ -197,7 +197,7 @@ class ExtractionTests(unittest.TestCase):
                 pages = copy.deepcopy(FIXTURE['pages'])
                 pages[file] = pages[file].replace(before, after, 1)
                 with self.assertRaises(check.ExtractionError):
-                    check.extract(pages)
+                    check.extract_records(pages)
 
 
 class NetworkTests(unittest.TestCase):
@@ -236,7 +236,8 @@ class NetworkTests(unittest.TestCase):
             self.assertEqual(sha, shas[repo])
             if failure and repo == check.REPOSITORIES['reference']:
                 raise failure
-            value = FIXTURE['pages'][filename]
+            value = ((Path(__file__).resolve().parents[2] / filename).read_text(encoding='utf-8')
+                     if filename in ('ip.html', 'data/ip-portfolio.json') else FIXTURE['pages'][filename])
             if repo == check.REPOSITORIES['reference'] and filename == 'people.html':
                 value = FIXTURE['reference_people']
                 if mutation:
@@ -251,7 +252,7 @@ class NetworkTests(unittest.TestCase):
         self.assertEqual(result['status'], 'MATCH')
         self.assertTrue(result['comparison_performed'])
         self.assertEqual(reader.resolve.call_count, 2)
-        self.assertEqual(reader.page.call_count, 6)
+        self.assertEqual(reader.page.call_count, 2 * len(check.FILES))
         actual = check.GitHubReader()
         actual.read = Mock(return_value='source')
         actual.page('owner/repo', 'c' * 40, 'ip.html')
@@ -299,8 +300,13 @@ class NetworkTests(unittest.TestCase):
 
     def test_extract_cli_is_offline_and_accepts_actual_changed_center(self):
         with tempfile.TemporaryDirectory() as tmp:
-            for name, html in FIXTURE['pages'].items():
-                (Path(tmp) / name).write_text(html.replace('공정시스템연구센터', '가상검사용센터'), encoding='utf-8')
+            pages = dict(FIXTURE['pages'])
+            for name in ('ip.html', 'data/ip-portfolio.json'):
+                pages[name] = (Path(__file__).resolve().parents[2] / name).read_text(encoding='utf-8')
+            for name, html in pages.items():
+                target = Path(tmp) / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(html.replace('공정시스템연구센터', '가상검사용센터'), encoding='utf-8')
             with patch.object(check, 'GitHubReader', side_effect=AssertionError('network forbidden')), contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(check.main(['extract', '--root', tmp]), 0)
 
