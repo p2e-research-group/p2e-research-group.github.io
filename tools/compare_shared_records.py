@@ -333,9 +333,6 @@ def extract_portfolio(source: str, data_source: str) -> dict:
                 if type(number) is not int or number < 1 or number in seen_parents:
                     raise ExtractionError(context + ": invalid or duplicate patent placement")
                 seen_parents.add(number)
-                target = one((e for e in root.elements() if e.attrs.get("id") == f"patent-{number}"), context + " target")
-                if target.tag != "tr" or normalize(one(by_class(target, "no"), context + " row number").text()) != str(number):
-                    raise ExtractionError(context + ": link does not target its domestic record")
             heading = one((e for e in shown.children if isinstance(e, Element) and e.tag == "h3"), context + " heading")
             actual = {"id": shown.attrs.get("id", ""), **bilingual(heading, context), "patents": []}
             listing = one(by_class(shown, "ip-portfolio-inventions"), context + " members")
@@ -344,7 +341,11 @@ def extract_portfolio(source: str, data_source: str) -> dict:
                 match = re.fullmatch(r"#patent-([1-9][0-9]*)", link.attrs.get("href", ""))
                 if link.tag != "a" or match is None:
                     raise ExtractionError(context + ": invalid patent link")
-                number = int(match[1])
+                # Anchors are stable bookmarks; displayed numbers can change after a grant.
+                target = one((e for e in root.elements() if e.attrs.get("id") == match[0][1:]), context + " target")
+                if target.tag != "tr":
+                    raise ExtractionError(context + ": link does not target its domestic record")
+                number = int(nonempty(one(by_class(target, "no"), context + " row number").text(), context))
                 labels = bilingual(one(by_class(link, "ip-invention-number"), context + " visible number"), context)
                 for lang, expected_label in (("ko", f"특허 {number}"), ("en", f"Record {number}")):
                     agree(labels["label_" + lang], expected_label, context + ".visible_number." + lang)
