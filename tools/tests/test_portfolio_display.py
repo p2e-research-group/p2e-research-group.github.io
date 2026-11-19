@@ -17,11 +17,11 @@ import build_ip_portfolio as build
 import compare_shared_records as check
 
 EXPECTED_AREAS = [
-    ('diffusion-cooling', '냉난방·축열 시스템', 'Heating, Cooling & Thermal Storage', [2, 5, 7, 12]),
+    ('diffusion-cooling', '냉난방·축열 시스템', 'Heating, Cooling & Thermal Storage', [2, 5, 7, 13]),
     ('co2-reactor', '광에너지 변환·활용', 'Light-Energy Conversion & Utilization', [3, 8]),
     ('hydrogen-electrolysis', '수소·수전해 전극 및 촉매', 'Hydrogen & Water-Electrolysis Catalysts',
-     [10, 11, 14, 18, 20, 21, 22, 23]),
-    ('industrial-systems', '탄소·연료·해양 공정', 'Carbon, Fuel & Offshore Processes', [9, 15, 16, 17, 19]),
+     [10, 11, 15, 19, 20, 21, 22, 23]),
+    ('industrial-systems', '탄소·연료·해양 공정', 'Carbon, Fuel & Offshore Processes', [9, 12, 16, 17, 18]),
 ]
 
 
@@ -76,7 +76,7 @@ class PortfolioDisplayTests(unittest.TestCase):
         for changed in changes:
             with self.subTest(change=changes.index(changed)), self.assertRaises(check.ExtractionError):
                 self.display(changed)
-        for parents in ([5, 2, 7, 12], [2, 2, 7, 12], [True, 5, 7, 12], [999, 5, 7, 12]):
+        for parents in ([5, 2, 7, 13], [2, 2, 7, 13], [True, 5, 7, 13], [999, 5, 7, 13]):
             data = copy.deepcopy(self.data)
             data['cards'][0]['parents'] = parents
             with self.subTest(parents=parents), self.assertRaises(check.ExtractionError):
@@ -96,6 +96,16 @@ class PortfolioDisplayTests(unittest.TestCase):
                 self.display(changed)
         with self.assertRaises(check.ExtractionError):
             check.extract_portfolio(self.source, '{not JSON')
+
+    def test_renumbered_member_keeps_title_and_bookmark_together(self):
+        member = next(e for e in check.by_class(check.Document(self.source).root, 'ip-invention-link')
+                      if e.attrs.get('href') == '#patent-19')
+        self.assertIn('특허 12', member.text())
+        self.assertIn('내황성 메탄 산화 촉매', member.text())
+        for changed in (self.source.replace('href="#patent-19"', 'href="#patent-12"', 1),
+                        self.source.replace('>특허 12</span>', '>특허 19</span>', 1)):
+            with self.assertRaises(check.ExtractionError):
+                self.display(changed)
 
     def test_transfer_text_language_removal_duplication_and_banner_fail(self):
         for note in ('', self.note * 2, self.note.replace('어밸브', '다른기업'),

@@ -27,6 +27,23 @@ class InternationalRecordsTests(unittest.TestCase):
         data = check.extract_patents(self.source)
         self.assertEqual([r['number'] for r in data], list(range(1,24)))
         self.assertEqual(data[10]['registration'], '103029668')
+        self.assertEqual(data[11]['registration'], '103040665')
+        self.assertEqual([r['status_en'] for r in data], ['Granted'] * 12 + ['Published'] * 11)
+        expected_apps = ['1020240108551', '1020180098144', '1020200096553',
+                         '1020220161616', '1020230042123', '1020230052876',
+                         '1020230127347', '1020240032733']
+        self.assertEqual([r['application'] for r in data[11:19]], expected_apps)
+        for publication, parent in [('WO2026038778A1', '12'), ('WO2024117507A1', '15'),
+                                    ('WO2025188145A1', '19')]:
+            self.assertEqual(next(r for r in self.original if r['publication'] == publication)['parent'], parent)
+
+    def test_renumbering_preserves_existing_invention_bookmarks(self):
+        root = check.Document(self.source).root
+        for old, current in [(19, 12), *[(n, n + 1) for n in range(12, 19)]]:
+            row = check.one((e for e in root.elements() if e.attrs.get('id') == f'patent-{old}'), 'bookmark')
+            self.assertEqual(check.one(check.by_class(row, 'no'), 'number').text(), str(current))
+        data = build.load_data(ROOT)
+        self.assertEqual(build.render(self.source, data), self.source)
 
     def test_missing_and_changed_foreign_record_are_detected(self):
         old = dict(patents=[],linked_patents=self.original,publications=[],center={'ko':'x','en':'x'})
