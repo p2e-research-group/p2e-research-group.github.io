@@ -1,4 +1,4 @@
-/* Research areas: equipment alongside the question it helps answer. */
+/* Research areas: schematics of the engineering relationships under study. */
 body.hv-interior.hv-research {padding:0}
 .hv-research.hv-interior .page-hero h1 {font-weight:560;letter-spacing:-.025em}
 .hv-research.hv-interior .page-hero .page-nav {border-top:1px solid #cedbe2}
@@ -13,7 +13,6 @@ body.hv-interior.hv-research {padding:0}
 .hv-research.hv-interior #themes .area-image {display:block;width:100%;height:auto;aspect-ratio:1.46;object-fit:contain;background:#f4f4f2;border:0;border-radius:0}
 .hv-research.hv-interior #themes .area-text h3 {color:#245d7f;font-size:clamp(1.14rem,1.5vw,1.39rem);font-weight:530;line-height:1.36;letter-spacing:-.018em;margin:0 0 .6rem;overflow-wrap:normal}
 .hv-research.hv-interior #themes .area-text p {font-size:1rem;color:#465963;line-height:1.67;margin:0}
-.hv-research.hv-interior .area-image-note {color:#596c76;font-size:.875rem;margin:1.8rem 0 0;text-align:right}
 .hv-research.hv-interior #positioning {background:#f4f7f8;border-block:1px solid #e4ebee;padding:clamp(2.45rem,4.1vw,3.7rem) 0}
 .hv-research.hv-interior #positioning .section-head,.hv-research.hv-interior #testbeds .section-head,.hv-research.hv-interior #questions .section-head,.hv-research.hv-interior #architecture .section-head {margin-bottom:1.75rem}
 .hv-research.hv-interior :is(#positioning,#questions,#architecture,#testbeds) .section-head h2 {font-weight:500;letter-spacing:-.026em}
@@ -34,9 +33,8 @@ body.hv-interior.hv-research {padding:0}
 @media(max-width:540px){
  .hv-research.hv-interior #themes {padding:2.65rem 0}
  .hv-research.hv-interior #themes .area-study {grid-template-columns:minmax(0,32%) minmax(0,1fr);gap:.9rem;align-items:start}
- .hv-research.hv-interior #themes .area-image {aspect-ratio:1.28;object-fit:contain;background:#f4f4f2}
+ .hv-research.hv-interior #themes .area-image {aspect-ratio:180/118;object-fit:contain;background:transparent}
  .hv-research.hv-interior #themes .area-text h3 {font-size:1.1rem;margin-bottom:.33rem}
  .hv-research.hv-interior #themes .area-text p {line-height:1.53}
- .hv-research.hv-interior #themes .area-image-note {text-align:left}
  .hv-research.hv-interior #architecture .workflow-list {background:transparent}
 }
