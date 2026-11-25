@@ -10,6 +10,8 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+from compare_shared_records import Document, by_class
+
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = "https://p2e-research-group.github.io/"
@@ -251,11 +253,17 @@ def main() -> int:
             errors.append(f"people.html: named collaborator remains: {name}")
 
     people = (ROOT / "people.html").read_text(encoding="utf-8")
-    if people.count('class="researcher-card"') != 3:
-        errors.append("people.html: expected exactly three researcher cards")
-    researcher_section = people.split('id="researchers"', 1)[-1].split('id="collaborators"', 1)[0]
-    if re.search(r'class="tags"|class="interface-line"', researcher_section):
-        errors.append("people.html: researcher tags or mapping blocks remain")
+    people_dom = Document(people).root
+    sections = [e for e in people_dom.elements()
+                if e.tag == "section" and e.attrs.get("id") == "researchers"]
+    if len(sections) != 1:
+        errors.append("people.html: expected one group members section")
+    else:
+        members = sections[0]
+        if len(by_class(members, "researcher-card")) != 3 or len(by_class(people_dom, "researcher-card")) != 3:
+            errors.append("people.html: expected exactly three researcher cards in the group members section")
+        if by_class(members, "tags") or by_class(members, "interface-line"):
+            errors.append("people.html: researcher tags or mapping blocks remain")
 
     publications = (ROOT / "publications.html").read_text(encoding="utf-8")
     if publications.count('class="publication-item"') != 13:
