@@ -66,6 +66,33 @@ class ExtractionTests(unittest.TestCase):
         self.pages["people.html"] = FIXTURE["reference_people"]
         self.assertEqual(check.extract_records(self.pages)["center"], self.original["center"])
 
+    def test_visible_pi_role_matches_legacy_and_ignores_unrelated_center_text(self):
+        expected = self.original["center"]
+        role = ('<div class="role" data-current-appointment="true" data-original-center-ko="' + expected["ko"]
+                + '"><span class="lang-en">Senior Researcher · KRICT<br>' + expected["en"] + '</span></div>')
+        page = ('<html lang="en"><section id="pi"><article class="pi-card">' + role
+                + '</article></section><footer>Former Research Center</footer></html>')
+        self.assertEqual(check.extract_center(page), check.extract_center(FIXTURE["reference_people"]))
+        changed = page.replace(expected["en"], "Different Center", 1)
+        self.assertEqual(check.extract_center(changed)["en"], "Different Center")
+        self.assertEqual(check.compare(self.original, {**self.original, "center": check.extract_center(changed)})[0]["field"],
+                         "center.en")
+
+    def test_missing_or_ambiguous_pi_role_never_uses_history_or_legacy_summary(self):
+        role = ('<div class="role" data-current-appointment="true" data-original-center-ko="공정시스템연구센터">'
+                '<span class="lang-en">Senior Researcher<br>Incorrect Center</span></div>')
+        card = '<article class="pi-card">' + role + '</article>'
+        footer = '<footer>Senior Researcher<br>Process System Research Center</footer>'
+        for markup in (card.replace(role, ''), card.replace(role, role * 2),
+                       card.replace('class="pi-card"', 'class="career"'),
+                       card.replace('data-current-appointment="true"', ''),
+                       card.replace('class="lang-en"', 'class="lang-en" hidden'),
+                       '<aside aria-hidden="true">' + card + '</aside>',
+                       card.replace('<br>Incorrect Center', ''),
+                       card + FIXTURE["reference_people"]):
+            with self.subTest(markup=markup[:120]), self.assertRaises(check.ExtractionError):
+                check.extract_center('<html lang="en">' + markup + footer + '</html>')
+
     def test_center_changes_in_either_language_are_detected(self):
         for lang, before, after in [("ko", "공정시스템연구센터", "다른연구센터"),
                                     ("en", "Process System Research Center", "Process Systems Research Center")]:
