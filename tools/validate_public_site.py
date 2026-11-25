@@ -28,6 +28,9 @@ REQUIRED_ASSETS = (
     "assets/responsive.css",
     "assets/editorial-polish.css",
     "assets/site.js",
+    "assets/slide.js",
+    "assets/lab.css",
+    "assets/interiors.css",
     "assets/p2e-favicon-v1.svg",
     "assets/p2e-wordmark-v1.svg",
     "assets/p2e-og-v1.png",
@@ -76,8 +79,13 @@ class PageParser(HTMLParser):
         self.canonicals: list[str] = []
         self.og_urls: list[str] = []
         self.og_images: list[str] = []
-        self.ko_count = 0
-        self.en_count = 0
+        self.document_languages: list[str] = []
+        self.body_languages: list[str] = []
+        self.robots: list[str] = []
+        self.language_controls = False
+        self.korean_ui = False
+        self._in_body = False
+        self._non_content = False
         self.nav_links: list[str] = []
         self._in_main_nav = False
 
@@ -87,8 +95,18 @@ class PageParser(HTMLParser):
         if element_id:
             self.ids.add(element_id)
         classes = set((attrs.get("class") or "").split())
-        self.ko_count += int("lang-ko" in classes)
-        self.en_count += int("lang-en" in classes)
+        if tag == "html":
+            self.document_languages.append(attrs.get("lang") or "")
+        if tag == "body":
+            self._in_body = True
+            self.body_languages.append(attrs.get("data-lang") or "")
+        if tag in {"script", "style"}:
+            self._non_content = True
+        if "data-lang-button" in attrs or "lang-toggle" in classes:
+            self.language_controls = True
+        self.korean_ui |= "lang-ko" in classes or (attrs.get("lang") or "").lower().split("-")[0] == "ko"
+        for name in ("aria-label", "title", "alt", "placeholder"):
+            self.korean_ui |= bool(re.search(r"[가-힣]", attrs.get(name) or ""))
         if tag == "nav" and attrs.get("id") == "main-menu":
             self._in_main_nav = True
         if tag == "a" and attrs.get("href"):
@@ -98,6 +116,8 @@ class PageParser(HTMLParser):
                 self.nav_links.append(href)
         if tag in {"img", "script"} and attrs.get("src"):
             self.assets.append(attrs["src"] or "")
+        if tag in {"img", "source"} and attrs.get("srcset"):
+            self.assets.extend(s.split()[0] for s in attrs["srcset"].split(",") if s.strip())
         if tag == "link" and attrs.get("href"):
             href = attrs["href"] or ""
             if attrs.get("rel") == "canonical":
@@ -105,13 +125,23 @@ class PageParser(HTMLParser):
             elif attrs.get("rel") in {"stylesheet", "icon"}:
                 self.assets.append(href)
         if tag == "meta":
+            if (attrs.get("name") or "").lower() == "robots":
+                self.robots.extend((attrs.get("content") or "").lower().replace(",", " ").split())
             prop = attrs.get("property")
             if prop == "og:url" and attrs.get("content"):
                 self.og_urls.append(attrs["content"] or "")
             if prop == "og:image" and attrs.get("content"):
                 self.og_images.append(attrs["content"] or "")
 
+    def handle_data(self, data: str) -> None:
+        if self._in_body and not self._non_content:
+            self.korean_ui |= bool(re.search(r"[가-힣]", data))
+
     def handle_endtag(self, tag: str) -> None:
+        if tag == "body":
+            self._in_body = False
+        if tag in {"script", "style"}:
+            self._non_content = False
         if tag == "nav" and self._in_main_nav:
             self._in_main_nav = False
 
@@ -165,8 +195,16 @@ def main() -> int:
         expected_image = BASE_URL + "assets/p2e-og-v1.png"
         if parser.og_images != [expected_image]:
             errors.append(f"{rel}: og:image must be {expected_image!r}")
-        if parser.ko_count == 0 or parser.en_count == 0:
-            errors.append(f"{rel}: missing explicit KO/EN content")
+        # data-lang="en" is also the CSS fallback: the complete English site must
+        # render when JavaScript/storage is unavailable or old KO preferences exist.
+        if parser.document_languages != ["en"] or parser.body_languages != ["en"]:
+            errors.append(f"{rel}: English must be the static document and body language")
+        if parser.language_controls or parser.korean_ui:
+            errors.append(f"{rel}: interactive language controls or Korean UI remain")
+        if rel == "404.html" and "noindex" not in parser.robots:
+            errors.append(f"{rel}: missing noindex for the error page")
+        elif rel in PUBLIC_PAGES and {"noindex", "nofollow", "none"}.intersection(parser.robots):
+            errors.append(f"{rel}: public page unexpectedly excluded from search")
         expected_nav = ["index.html", "research.html", "people.html", "publications.html", "ip.html", "join.html"]
         observed_nav = [href.lstrip("/") for href in parser.nav_links]
         if observed_nav != expected_nav:

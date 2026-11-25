@@ -195,6 +195,24 @@ def domestic_source_url(cell: Element, ids: dict, context: str) -> str:
     return url
 
 
+def english_page(root: Element) -> bool:
+    """Fragment fixtures and the reference site still use the bilingual contract."""
+    return any(e.tag == "html" and e.attrs.get("lang") == "en" for e in root.children if isinstance(e, Element))
+
+
+def shared_labels(node: Element, context: str, english_only: bool) -> dict[str, str]:
+    en = one(by_class(node, "lang-en"), context + " en")
+    value_en = nonempty(en.text(), context + " en")
+    if english_only:
+        # The actual English display is checked independently from its source label.
+        if by_class(node, "lang-ko") or key(node.text()) != key(value_en):
+            raise ExtractionError(context + ": unexpected text surrounding English label")
+        value_ko = nonempty(en.attrs.get("data-source-ko", ""), context + " original Korean label")
+    else:
+        value_ko = nonempty(one(by_class(node, "lang-ko"), context + " ko").text(), context)
+    return {"ko": value_ko, "en": value_en}
+
+
 def extract_patents(source: str, *, require_domestic_links: bool = True) -> list[dict]:
     root = Document(source).root
     table = one(by_class(root, "registry-table"), "ip.html registry table")
@@ -215,7 +233,14 @@ def extract_patents(source: str, *, require_domestic_links: bool = True) -> list
         title_cell = one(by_class(row, "title"), context + " title")
         # Compare the Korean original, not an original + display-translation join.
         # Legacy reference markup is plain Korean; bilingual markup is explicit.
-        if by_class(title_cell, "lang-ko") or by_class(title_cell, "lang-en"):
+        translation = None
+        if english_page(root):
+            title = nonempty(title_cell.attrs.get("data-original-title-ko", ""), context + " Korean original title")
+            translation = one(by_class(title_cell, "lang-en"), context + " English title")
+            nonempty(translation.text(), context)
+            if by_class(title_cell, "lang-ko") or key(translation.text()) != key(title_cell.text()):
+                raise ExtractionError(context + ": invalid English-only title display")
+        elif by_class(title_cell, "lang-ko") or by_class(title_cell, "lang-en"):
             original = one(by_class(title_cell, "lang-ko"), context + " original title")
             translation = one(by_class(title_cell, "lang-en"), context + " translated title")
             nonempty(translation.text(), context + " translated title")
@@ -233,9 +258,10 @@ def extract_patents(source: str, *, require_domestic_links: bool = True) -> list
         record = {"number": number, "title": title, **ids}
         if require_domestic_links:
             record["domestic_source_url"] = domestic_source_url(cell, ids, context)
-        for lang in ("ko", "en"):
-            value = one(by_class(status, f"lang-{lang}"), context + f" status ({lang})")
-            record[f"status_{lang}"] = nonempty(value.text(), context)
+        if translation is not None:
+            record["title_en"] = nonempty(translation.text(), context + " English title")
+        for lang, label in shared_labels(status, context + " status", english_page(root)).items():
+            record[f"status_{lang}"] = label
         records.append(record)
     return records
 
@@ -263,7 +289,10 @@ def extract_center(source: str) -> dict[str, str]:
                  if any(appointment_heading(h) for h in e.elements())),
                 "people.html CURRENT APPOINTMENT block")
     result = {}
-    for lang in ("ko", "en"):
+    english_only = english_page(root)
+    if english_only:
+        result["ko"] = nonempty(block.attrs.get("data-original-center-ko", ""), "CURRENT APPOINTMENT Korean center")
+    for lang in (("en",) if english_only else ("ko", "en")):
         # R1 fix: labels may themselves have lang-ko/lang-en. Select direct VALUE
         # children, excluding heading nodes/wrappers, not a known center string.
         values = [e for e in block.children if isinstance(e, Element)
@@ -316,7 +345,9 @@ def extract_linked_patents(source: str) -> list[dict]:
         stage = one(by_class(item,'ip-stage'),'international stage')
         expected = {'granted':('등록공보','Granted'),'published':('공개','Published'),
                     'allowed':('등록결정 안내','Allowance notice'),'pct_published':('PCT 국제공개','PCT publication')}
-        for lang, value in zip(('ko','en'), expected[fields['stage']]):
+        labels = dict(zip(('ko','en'), expected[fields['stage']]))
+        for lang in (('en',) if english_page(root) else ('ko', 'en')):
+            value = labels[lang]
             actual = normalize(one(by_class(stage,'lang-'+lang),'international bilingual stage').text())
             if actual != value:
                 raise ExtractionError('international stage conflicts with visible bilingual label')
@@ -357,8 +388,8 @@ def extract_portfolio(source: str, data_source: str) -> dict:
             raise ExtractionError("portfolio: missing, extra or detached technology area")
 
         def bilingual(node, context):
-            return {"label_" + lang: nonempty(one(by_class(node, "lang-" + lang),
-                    context + " " + lang).text(), context) for lang in ("ko", "en")}
+            return {"label_" + lang: value for lang, value in
+                    shared_labels(node, context, english_page(root)).items()}
 
         def agree(actual, expected, context):
             same = key(actual) == key(expected) if isinstance(actual, str) and isinstance(expected, str) else actual == expected
@@ -411,15 +442,20 @@ def extract_portfolio(source: str, data_source: str) -> dict:
         if normalize(one(by_class(row, "no"), "transfer row number").text()) != "1":
             raise ExtractionError("portfolio transfer: domestic parent number conflicts")
         children = [e for e in note.children if isinstance(e, Element)]
-        if (len(children) != 2 or any(e.tag != "span" or list(e.elements())
-                or e.attrs not in ({"class": "lang-ko"}, {"class": "lang-en"}) for e in children)
+        english_only = english_page(root)
+        if english_only:
+            expected_spans = len(children) == 1 and children[0].attrs.keys() == {"class", "data-source-ko"} and children[0].has_class("lang-en")
+        else:
+            expected_spans = len(children) == 2 and all(e.attrs in ({"class": "lang-ko"}, {"class": "lang-en"}) for e in children)
+        if (not expected_spans or any(e.tag != "span" or list(e.elements()) for e in children)
                 or key(note.text()) != key("".join(e.text() for e in children))):
-            raise ExtractionError("portfolio transfer: expected two plain language spans")
+            raise ExtractionError("portfolio transfer: expected plain label in each displayed language")
         labels = bilingual(note, "portfolio transfer")
         for lang, prefix in (("ko", "기술이전: "), ("en", "Technology transfer: ")):
             expected = prefix + nonempty(transfer["recipient_" + lang], "transfer recipient")
             agree(labels["label_" + lang], expected, "portfolio transfer " + lang)
-            if key(root.text()).count(key(prefix)) != 1:
+            expected_occurrences = 0 if english_only and lang == "ko" else 1
+            if key(root.text()).count(key(prefix)) != expected_occurrences:
                 raise ExtractionError("portfolio transfer: duplicate or standalone transfer display")
         return {"areas": areas, "technology_transfers": [{"parent": 1, **labels}]}
     except (KeyError, TypeError, ValueError, AttributeError) as exc:

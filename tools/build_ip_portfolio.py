@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the bilingual static IP page from existing KR rows and verified links."""
+"""Render the English static IP page from existing KR rows and verified links."""
 import argparse
 import json
 import re
@@ -8,14 +8,16 @@ from html import escape
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-STAGES = {'granted': ('등록공보', 'Granted'), 'published': ('공개', 'Published'),
-          'allowed': ('등록결정 안내', 'Allowance notice'),
-          'pct_published': ('PCT 국제공개', 'PCT publication')}
-COUNTRIES = {'US': ('미국', 'US'), 'JP': ('일본', 'Japan'), 'CN': ('중국', 'China'),
-             'EP': ('유럽', 'Europe'), 'WO': ('WIPO', 'WIPO')}
+STAGES = {'granted': 'Granted', 'published': 'Published',
+          'allowed': 'Allowance notice', 'pct_published': 'PCT publication'}
+COUNTRIES = {'US': 'US', 'JP': 'Japan', 'CN': 'China', 'EP': 'Europe', 'WO': 'WIPO'}
 
-def bilingual(ko, en):
-    return f'<span class="lang-ko">{escape(ko)}</span><span class="lang-en">{escape(en)}</span>'
+def english(en):
+    return f'<span class="lang-en">{escape(en)}</span>'
+
+def shared_label(ko, en):
+    """Retain the reference label as provenance, never as a second UI language."""
+    return f'<span class="lang-en" data-source-ko="{escape(ko, quote=True)}">{escape(en)}</span>'
 
 def load_data(root=ROOT):
     data = json.loads((root / 'data/ip-portfolio.json').read_text(encoding='utf-8'))
@@ -57,8 +59,8 @@ def load_data(root=ROOT):
 
 def render_badges(parents, domestic_stages, records):
     stages = {domestic_stages[n] for n in parents}
-    ko,en = ('한국 등록 또는 공개','Korean grants or publications') if len(stages)>1 else (('한국 등록','KR grant') if 'granted' in stages else ('한국 공개','KR publication'))
-    badges = ['<span class="ip-badge">'+bilingual(ko,en)+'</span>']
+    en = 'Korean grants or publications' if len(stages)>1 else ('KR grant' if 'granted' in stages else 'KR publication')
+    badges = ['<span class="ip-badge">'+english(en)+'</span>']
     seen = set()
     for item in records:
         if item['parent'] not in parents:
@@ -67,14 +69,12 @@ def render_badges(parents, domestic_stages, records):
         if label in seen:
             continue
         seen.add(label)
-        ko,en = COUNTRIES[label[0]]; sk,se=STAGES[label[1]]
-        if label[0] == 'WO':
-            ko,en,sk,se = '', '', 'PCT 국제공개', 'PCT publication'
-        badges.append(f'<span class="ip-badge {item["stage"]}">{bilingual(ko+" "+sk if ko else sk,en+": "+se if en else se)}</span>')
+        text = STAGES[label[1]] if label[0] == 'WO' else COUNTRIES[label[0]] + ': ' + STAGES[label[1]]
+        badges.append(f'<span class="ip-badge {item["stage"]}">{english(text)}</span>')
     return '<div class="ip-badges">'+''.join(badges)+'</div>'
 
 def transfer_label(transfer):
-    return bilingual('기술이전: '+transfer['recipient_ko'], 'Technology transfer: '+transfer['recipient_en'])
+    return shared_label('기술이전: '+transfer['recipient_ko'], 'Technology transfer: '+transfer['recipient_en'])
 
 def render_record(item):
     stage = STAGES[item['stage']]
@@ -86,18 +86,18 @@ def render_record(item):
     attributes = ' '.join(f'data-{k}="{escape(v, quote=True)}"' for k, v in attrs.items())
     note = ''
     value = item.get('allowance', {})
-    if value.get('note_ko') and value.get('note_en'):
-        note = '<p class="ip-record-note">' + bilingual(value['note_ko'], value['note_en']) + '</p>'
+    if value.get('note_en'):
+        note = '<p class="ip-record-note">' + english(value['note_en']) + '</p>'
     aliases = ''
     if item['aliases']:
-        aliases = '<small>' + bilingual('관련 공개번호: ', 'Related publications: ') + escape(', '.join(item['aliases'])) + '</small>'
+        aliases = '<small>' + english('Related publications: ') + escape(', '.join(item['aliases'])) + '</small>'
     return (f'<li class="ip-linked-record" {attributes}>'
-            f'<div class="ip-right-heading"><b>{bilingual(*country)}</b>'
-            f'<span class="ip-stage {item["stage"]}">{bilingual(*stage)}</span></div>'
+            f'<div class="ip-right-heading"><b>{english(country)}</b>'
+            f'<span class="ip-stage {item["stage"]}">{english(stage)}</span></div>'
             f'<a class="ip-publication" href="{escape(item["publication_url"], quote=True)}">{escape(item["publication"])}</a>'
-            f'<small>{bilingual("출원: ", "Application: ")}{escape(item["application"])}</small>'
-            f'<small>{bilingual("공보 발행: ", "Publication: ")}<time datetime="{item["event_date"]}">{item["event_date"]}</time></small>'
-            f'{aliases}<a class="ip-source" href="{escape(item["evidence_url"], quote=True)}">{bilingual("근거 공보", "Source record")}</a>{note}</li>')
+            f'<small>{english("Application: ")}{escape(item["application"])}</small>'
+            f'<small>{english("Publication: ")}<time datetime="{item["event_date"]}">{item["event_date"]}</time></small>'
+            f'{aliases}<a class="ip-source" href="{escape(item["evidence_url"], quote=True)}">{english("Source record")}</a>{note}</li>')
 
 def render(source, data):
     old_main = source.split('<main id="main-content">', 1)[1].split('</main>', 1)[0]
@@ -135,7 +135,7 @@ def render(source, data):
         cell = cells[-1]
         group = items_by_parent.get(number, [])
         if group:
-            extra = '<div class="ip-related"><h4>' + bilingual('해외 권리화·국제공개', 'International records') + '</h4><ul class="ip-rights">' + ''.join(map(render_record, group)) + '</ul></div>'
+            extra = '<details class="ip-related"><summary><h4>' + english('International records') + '</h4></summary><ul class="ip-rights">' + ''.join(map(render_record, group)) + '</ul></details>'
             cell = cell[:-5] + '<!-- linked:start -->' + extra + '<!-- linked:end --></td>'
         if number in transfers_by_parent:
             transfer = transfers_by_parent[number]
@@ -161,37 +161,38 @@ def render(source, data):
     grants = sum(x['stage'] == 'granted' for x in data['records'])
     other = sum(x['stage'] in ('published','allowed') for x in data['records'])
     pct = sum(x['stage'] == 'pct_published' for x in data['records'])
-    metrics = [(sum(s=='granted' for s in domestic_stages.values()),'국내 등록','KR grants'), (sum(s=='published' for s in domestic_stages.values()),'국내 공개','KR publications'),
-               (grants,'해외 등록','International grants'), (other,'해외 공개 또는 등록결정','International publications / allowance'),
-               (pct,'PCT 국제공개','PCT publications')]
-    metric_html = ''.join(f'<div class="ip-metric"><strong>{n}</strong><span>{bilingual(ko,en)}</span></div>' for n,ko,en in metrics)
+    metrics = [(sum(s=='granted' for s in domestic_stages.values()),'KR grants'), (sum(s=='published' for s in domestic_stages.values()),'KR publications'),
+               (grants,'International grants'), (other,'International publications / allowance'),
+               (pct,'PCT publications')]
+    metric_html = ''.join(f'<div class="ip-metric"><strong>{n}</strong><span>{english(en)}</span></div>' for n,en in metrics)
     cards = []
     for card in data['cards']:
         members = []
         for number in card['parents']:
             title = card.get('member_titles', {}).get(str(number))
-            title_html = bilingual(title['ko'],title['en']) if title else domestic_titles[number]
+            title_html = english(title['en']) if title else domestic_titles[number]
             legacy_id = card.get('legacy_anchors', {}).get(str(number))
             anchor = f' id="{escape(legacy_id,quote=True)}"' if legacy_id else ''
-            members.append(f'<li class="ip-portfolio-invention anchor-target"{anchor}><a class="ip-invention-link" href="#{domestic_anchors[number]}"><span class="ip-invention-number">{bilingual("특허 "+str(number),"Record "+str(number))}</span>{title_html}</a>'+render_badges([number],domestic_stages,data['records'])+'</li>')
-        cards.append(f'<article class="family-card" id="{card["id"]}"><div class="eyebrow">{bilingual(card["application_ko"],card["application_en"])}</div><h3>{bilingual(card["ko"],card["en"])}</h3><p>{bilingual(card["description_ko"],card["description_en"])}</p><ul class="ip-portfolio-inventions">'+''.join(members)+'</ul></article>')
+            members.append(f'<li class="ip-portfolio-invention anchor-target"{anchor}><a class="ip-invention-link" href="#{domestic_anchors[number]}"><span class="ip-invention-number">{shared_label("특허 "+str(number),"Record "+str(number))}</span>{title_html}</a>'+render_badges([number],domestic_stages,data['records'])+'</li>')
+        cards.append(f'<article class="family-card" id="{card["id"]}"><div class="eyebrow">{english(card["application_en"])}</div><h3>{shared_label(card["ko"],card["en"])}</h3><p>{english(card["description_en"])}</p><details class="hv-family-disclosure"><summary>Inventions ({len(members)})</summary><ul class="ip-portfolio-inventions">'+''.join(members)+'</ul></details></article>')
     main = f'''<main id="main-content">
+  <div class="hv-trail"><div class="shell"><a href="index.html">Home</a><span class="hv-chevron" aria-hidden="true"></span><span aria-current="page">Intellectual property</span></div></div>
   <section class="page-hero"><div class="shell">
-    <h1>{bilingual('국내외 특허','Patent portfolio')}</h1>
-    <p>{bilingual('정한솔 선임연구원이 이전 연구와 공동연구에서 발명자로 참여한 특허입니다. 국내 특허를 기준으로 해외 공보를 함께 모았습니다.','Patents naming Han Sol Jung as an inventor in prior and collaborative research. Korean records are paired with their corresponding international publications.')}</p>
-    <div class="page-nav"><a href="#families">{bilingual('기술 분야별 특허','Technology areas')}</a><a href="#registry">{bilingual('특허 전체 목록','Full patent list')}</a></div>
+    <h1>{english('Patent portfolio')}</h1>
+    <p>{english('Patents naming Han Sol Jung as an inventor in prior and collaborative research. Korean records are paired with their corresponding international publications.')}</p>
+    <div class="page-nav"><a href="#families">{english('Technology areas')}</a><a href="#registry">{english('Full patent list')}</a></div>
     <div class="ip-metrics">{metric_html}</div>
-    <p class="ip-count-note">{bilingual('국가나 지역별로 같은 출원은 한 번만 셉니다. PCT 국제공개는 해외 등록에 포함하지 않습니다.','Each application is counted once per jurisdiction. PCT publications are counted separately from overseas grants.')} {bilingual('해외 기록 확인일: ', 'International records checked: ')}<time datetime="{data['checked_on']}">{data['checked_on']}</time></p>
+    <p class="ip-count-note">{english('Each application is counted once per jurisdiction. PCT publications are counted separately from overseas grants.')} {english('International records checked: ')}<time datetime="{data['checked_on']}">{data['checked_on']}</time></p>
   </div></section>
   <section class="section alt anchor-target" id="families"><div class="shell">
-    <div class="section-head"><div><h2>{bilingual('기술 분야별 특허','Patents by technology area')}</h2></div></div>
+    <div class="section-head"><div><h2>{english('Patents by technology area')}</h2></div></div>
     <div class="family-grid">{''.join(cards)}</div>
   </div></section>
   <section class="section anchor-target" id="registry"><div class="shell">
-    <div class="section-head"><div><h2>{bilingual('특허 전체 목록','Full patent list')}</h2></div></div>
+    <div class="section-head"><div><h2>{english('Full patent list')}</h2></div></div>
     <div class="registry-wrap" role="region" aria-label="Domestic and international patents" tabindex="0">
-    <table class="registry-table ip-table" role="table"><caption>{bilingual(f'국내 발명 {len(rendered_rows)}건과 관련 해외 기록', f'{len(rendered_rows)} Korean inventions and their international records')}</caption>
-    <thead role="rowgroup"><tr role="row"><th scope="col">{bilingual('번호','No.')}</th><th scope="col">{bilingual('국내 식별자','Domestic identifiers')}</th><th scope="col">{bilingual('발명의 명칭','Invention')}</th><th scope="col">{bilingual('국내 이력','Domestic record')}</th><th scope="col">{bilingual('해외 기록·기술이전','International records & technology transfer')}</th></tr></thead>
+    <table class="registry-table ip-table" role="table"><caption>{english(f'{len(rendered_rows)} Korean inventions and their international records')}</caption>
+    <thead role="rowgroup"><tr role="row"><th scope="col">{english('No.')}</th><th scope="col">{english('Domestic identifiers')}</th><th scope="col">{english('Invention')}</th><th scope="col">{english('Domestic record')}</th><th scope="col">{english('International records & technology transfer')}</th></tr></thead>
     <tbody role="rowgroup">{''.join(rendered_rows)}</tbody></table></div>
   </div></section>
 </main>'''
