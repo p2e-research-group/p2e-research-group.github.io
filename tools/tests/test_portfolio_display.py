@@ -57,7 +57,9 @@ class PortfolioDisplayTests(unittest.TestCase):
         for card in self.data['cards']:
             for lang in ('ko', 'en'):
                 with self.subTest(area=card['id'], lang=lang):
-                    changed = self.source.replace('>' + escape(card[lang]) + '</span>', '>Changed area</span>', 1)
+                    old = 'data-source-ko="' + escape(card[lang]) + '"' if lang == 'ko' else '>' + escape(card[lang]) + '</span>'
+                    new = 'data-source-ko="Changed area"' if lang == 'ko' else '>Changed area</span>'
+                    changed = self.source.replace(old, new, 1)
                     self.assertTrue(changed != self.source, 'test mutation must change the displayed heading')
                     with self.assertRaisesRegex(check.ExtractionError, 'data/HTML conflict'):
                         self.display(changed)
@@ -72,7 +74,7 @@ class PortfolioDisplayTests(unittest.TestCase):
                    self.source.replace('href="#patent-2"', 'href="#patent-3"', 1),
                    self.source.replace('href="#patent-2"', 'href="#patent-999"', 1),
                    self.source.replace('id="patent-2"', 'id="broken-patent-2"', 1),
-                   self.source.replace('>특허 2</span>', '>특허 3</span>', 1)]
+                   self.source.replace('>Record 2</span>', '>Record 3</span>', 1)]
         for changed in changes:
             with self.subTest(change=changes.index(changed)), self.assertRaises(check.ExtractionError):
                 self.display(changed)
@@ -100,10 +102,10 @@ class PortfolioDisplayTests(unittest.TestCase):
     def test_renumbered_member_keeps_title_and_bookmark_together(self):
         member = next(e for e in check.by_class(check.Document(self.source).root, 'ip-invention-link')
                       if e.attrs.get('href') == '#patent-19')
-        self.assertIn('특허 12', member.text())
-        self.assertIn('내황성 메탄 산화 촉매', member.text())
+        self.assertIn('Record 12', member.text())
+        self.assertIn('Sulfur-resistant methane oxidation catalyst', member.text())
         for changed in (self.source.replace('href="#patent-19"', 'href="#patent-12"', 1),
-                        self.source.replace('>특허 12</span>', '>특허 19</span>', 1)):
+                        self.source.replace('>Record 12</span>', '>Record 19</span>', 1)):
             with self.assertRaises(check.ExtractionError):
                 self.display(changed)
 
@@ -113,7 +115,7 @@ class PortfolioDisplayTests(unittest.TestCase):
                      self.note.replace('ip-transfer-record', 'ip-transfer-record ip-badge'),
                      self.note.replace('data-transfer-parent="1"', 'data-transfer-parent="2"'),
                      self.note.replace('</div>', ' Additional transfer claim</div>'),
-                     self.note.replace('class="lang-ko"', 'class="lang-ko" hidden'),
+                     self.note.replace('class="lang-en"', 'class="lang-en" hidden'),
                      self.note + '<section>기술이전: 어밸브</section>'):
             with self.subTest(note=note[:100]), self.assertRaises(check.ExtractionError):
                 self.display(self.source.replace(self.note, note, 1))

@@ -22,7 +22,9 @@ jobs:
       - name: Validate public site
         run: python tools/validate_public_site.py
       - name: Check JavaScript syntax
-        run: node --check assets/site.js
+        run: |
+          node --check assets/site.js
+          node --check assets/slide.js
       - name: Test shared-record extraction and failure handling (offline)
         run: python -B -m unittest discover -s tools/tests -v
       - name: Extract shared fields from this checkout (offline)

@@ -47,7 +47,7 @@ Family cross-references are established by priority/application relations, not b
 
 ## Editing and validation
 
-`data/ip-portfolio.json` is the international-link and selected-card source. `python tools/build_ip_portfolio.py` regenerates the static bilingual page while preserving the 23 domestic cells. `--check` detects drift and runs through the existing site validator. Content does not depend on JavaScript or a runtime data request.
+`data/ip-portfolio.json` is the international-link and selected-card source. `python tools/build_ip_portfolio.py` regenerates the portfolio and linked records on the static English page while preserving the 23 domestic records. `--check` detects drift and runs through the site validator. The historical bilingual checks below describe the version tested at the time. The current public register works in English without JavaScript.
 
 The official shared-record comparator also reads visible international rows, their domestic parent, publication/application identifiers, aliases, stages, dates and source links. Missing links, changed relationships, duplicates and PCT/grant conflation are tested. Existing JSON fields and scheduled-workflow behavior are retained; the new linked_patents collection is additive.
 
