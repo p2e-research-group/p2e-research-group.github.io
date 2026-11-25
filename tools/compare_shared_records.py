@@ -51,6 +51,7 @@ class Element:
     tag: str
     attrs: dict[str, str]
     children: list = field(default_factory=list)
+    duplicate_href: bool = False
 
     def has_class(self, name: str) -> bool:
         return name in self.attrs.get("class", "").split()
@@ -77,6 +78,9 @@ class Document(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         node = Element(tag, {k: v or "" for k, v in attrs})
+        if tag == "a":
+            # Keep duplicate hrefs visible after collapsing attributes into a dict.
+            node.duplicate_href = sum(name == "href" for name, _ in attrs) > 1
         self.stack[-1].children.append(node)
         if tag not in VOID:
             self.stack.append(node)
@@ -153,7 +157,45 @@ def patent_identifiers(row: Element, cell: Element, context: str) -> dict:
     return {kind: next(iter(numbers), None) for kind, numbers in values.items()}
 
 
-def extract_patents(source: str) -> list[dict]:
+def domestic_source_url(cell: Element, ids: dict, context: str) -> str:
+    """Validate the actual link's identity, not the renderer's provider choice."""
+    link = one((e for e in cell.elements()
+                if e.tag == "a" or e.has_class("ip-domestic-source")),
+               context + " domestic source link")
+    if (link.tag != "a" or not link.has_class("ip-domestic-source")
+            or key(link.text()) != key(cell.text())):
+        raise ExtractionError(f"{context}: domestic source link must wrap the visible identifiers")
+    if link.duplicate_href:
+        raise ExtractionError(f"{context}: duplicate domestic source href")
+    url = link.attrs.get("href", "")
+    if not url:
+        raise ExtractionError(f"{context}: missing domestic source href")
+
+    # The KIPRIS DOI suffix is the application number, not the grant/publication.
+    doi = re.fullmatch(r"https://doi\.org/10\.8080/(10[0-9]{11})", url)
+    if doi:
+        if doi[1] != ids["application"]:
+            raise ExtractionError(f"{context}: KIPRIS application mismatch: "
+                                  f"expected {ids['application']!r}, got {url!r}")
+        return url
+
+    # Google Patents uses the grant for registered records and the public
+    # publication for others. Reuse the already parsed (including hidden) IDs.
+    reg, pub = ids["registration"], ids["publication"]
+    if reg is not None and re.fullmatch(r"10[0-9]{7}", reg):
+        target = f"KR{reg}B1"
+    elif reg is None and pub is not None and re.fullmatch(r"10[0-9]{11}", pub):
+        target = f"KR{pub[2:]}A"
+    else:
+        raise ExtractionError(f"{context}: cannot establish domestic publication identity")
+    expected = f"https://patents.google.com/patent/{target}/ko"
+    if url != expected:
+        raise ExtractionError(f"{context}: domestic source URL mismatch: "
+                              f"expected {expected!r} or matching KIPRIS DOI, got {url!r}")
+    return url
+
+
+def extract_patents(source: str, *, require_domestic_links: bool = True) -> list[dict]:
     root = Document(source).root
     table = one(by_class(root, "registry-table"), "ip.html registry table")
     tbody = one((e for e in table.elements() if e.tag == "tbody"), "ip.html registry tbody")
@@ -189,6 +231,8 @@ def extract_patents(source: str) -> list[dict]:
                 identifiers.add((kind, value))
         status = one(by_class(row, "status-pill"), context + " status")
         record = {"number": number, "title": title, **ids}
+        if require_domestic_links:
+            record["domestic_source_url"] = domestic_source_url(cell, ids, context)
         for lang in ("ko", "en"):
             value = one(by_class(status, f"lang-{lang}"), context + f" status ({lang})")
             record[f"status_{lang}"] = nonempty(value.text(), context)
@@ -284,10 +328,10 @@ def extract_linked_patents(source: str) -> list[dict]:
     return records
 
 
-def extract_records(pages: dict[str, str]) -> dict:
-    """Extract the original record scope, independently of portfolio display."""
+def extract_records(pages: dict[str, str], *, require_domestic_links: bool = False) -> dict:
+    """Legacy record scope; full extract() always requires domestic links."""
     try:
-        return {"patents": extract_patents(pages["ip.html"]),
+        return {"patents": extract_patents(pages["ip.html"], require_domestic_links=require_domestic_links),
                 "linked_patents": extract_linked_patents(pages["ip.html"]),
                 "publications": extract_publications(pages["publications.html"]),
                 "center": extract_center(pages["people.html"])}
@@ -385,7 +429,7 @@ def extract_portfolio(source: str, data_source: str) -> dict:
 
 
 def extract(pages: dict[str, str]) -> dict:
-    records = extract_records(pages)
+    records = extract_records(pages, require_domestic_links=True)
     try:
         records["portfolio"] = extract_portfolio(pages["ip.html"], pages["data/ip-portfolio.json"])
     except KeyError as exc:
@@ -398,7 +442,9 @@ def compare(official: dict, reference: dict) -> list[dict]:
 
     def add(path, left, right):
         same = key(left) == key(right) if isinstance(left, str) and isinstance(right, str) else left == right
-        if isinstance(left, str) and isinstance(right, str) and (path.endswith('.status_en') or path == 'center.en'):
+        if path.endswith('.domestic_source_url'):
+            same = left == right  # URLs are not display text; compare exactly.
+        elif isinstance(left, str) and isinstance(right, str) and (path.endswith('.status_en') or path == 'center.en'):
             same = key(left).casefold() == key(right).casefold()
         if not same:
             differences.append({"field": path, "official": left, "reference": right})
