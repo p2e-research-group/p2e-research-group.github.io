@@ -10,7 +10,7 @@ body.hv-interior.hv-research {padding:0}
 .hv-research.hv-interior #themes h2::after {content:"";display:block;width:5.7rem;height:2px;background:#75a4bd;margin:1.2rem auto 0}
 .hv-research.hv-interior #themes .area-gallery {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(2.15rem,3.6vw,3.5rem) clamp(2rem,4.5vw,4rem)}
 .hv-research.hv-interior #themes .area-study {display:grid;grid-template-columns:minmax(0,.79fr) minmax(0,1.25fr);align-items:start;gap:clamp(.95rem,1.5vw,1.55rem);margin:0;padding:0;border:0;box-shadow:none;background:none}
-.hv-research.hv-interior #themes .area-image {width:100%;aspect-ratio:1.46;object-fit:cover;border:0;border-radius:0}
+.hv-research.hv-interior #themes .area-image {display:block;width:100%;height:auto;aspect-ratio:1.46;object-fit:contain;background:#f4f4f2;border:0;border-radius:0}
 .hv-research.hv-interior #themes .area-text h3 {color:#245d7f;font-size:clamp(1.14rem,1.5vw,1.39rem);font-weight:530;line-height:1.36;letter-spacing:-.018em;margin:0 0 .6rem;overflow-wrap:normal}
 .hv-research.hv-interior #themes .area-text p {font-size:1rem;color:#465963;line-height:1.67;margin:0}
 .hv-research.hv-interior .area-image-note {color:#596c76;font-size:.875rem;margin:1.8rem 0 0;text-align:right}
