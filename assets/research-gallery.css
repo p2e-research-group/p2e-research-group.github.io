@@ -1,0 +1,42 @@
+/* Research areas: equipment alongside the question it helps answer. */
+body.hv-interior.hv-research {padding:0}
+.hv-research.hv-interior .page-hero h1 {font-weight:560;letter-spacing:-.025em}
+.hv-research.hv-interior .page-hero .page-nav {border-top:1px solid #cedbe2}
+.hv-research.hv-interior .page-hero .page-nav a {min-height:44px}
+.hv-research.hv-interior #themes {margin:0;padding:clamp(3.4rem,5vw,5.4rem) 0;background:white}
+.hv-research.hv-interior #themes .shell {max-width:1180px}
+.hv-research.hv-interior #themes .section-head {margin:0 auto clamp(2.2rem,3.7vw,3.6rem)}
+.hv-research.hv-interior #themes h2 {color:#334653;font-weight:400;text-transform:uppercase;letter-spacing:.052em;font-size:clamp(1.75rem,3.2vw,2.65rem);line-height:1.2}
+.hv-research.hv-interior #themes h2::after {content:"";display:block;width:5.7rem;height:2px;background:#75a4bd;margin:1.2rem auto 0}
+.hv-research.hv-interior #themes .area-gallery {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(2.15rem,3.6vw,3.5rem) clamp(2rem,4.5vw,4rem)}
+.hv-research.hv-interior #themes .area-study {display:grid;grid-template-columns:minmax(0,.79fr) minmax(0,1.25fr);align-items:start;gap:clamp(.95rem,1.5vw,1.55rem);margin:0;padding:0;border:0;box-shadow:none;background:none}
+.hv-research.hv-interior #themes .area-image {width:100%;aspect-ratio:1.46;object-fit:cover;border:0;border-radius:0}
+.hv-research.hv-interior #themes .area-text h3 {color:#245d7f;font-size:clamp(1.14rem,1.5vw,1.39rem);font-weight:530;line-height:1.36;letter-spacing:-.018em;margin:0 0 .6rem;overflow-wrap:normal}
+.hv-research.hv-interior #themes .area-text p {font-size:1rem;color:#465963;line-height:1.67;margin:0}
+.hv-research.hv-interior .area-image-note {color:#596c76;font-size:.875rem;margin:1.8rem 0 0;text-align:right}
+.hv-research.hv-interior #positioning {background:#f4f7f8;border-block:1px solid #e4ebee;padding:clamp(2.45rem,4.1vw,3.7rem) 0}
+.hv-research.hv-interior #positioning .section-head,.hv-research.hv-interior #testbeds .section-head,.hv-research.hv-interior #questions .section-head,.hv-research.hv-interior #architecture .section-head {margin-bottom:1.75rem}
+.hv-research.hv-interior :is(#positioning,#questions,#architecture,#testbeds) .section-head h2 {font-weight:500;letter-spacing:-.026em}
+.hv-research.hv-interior #positioning .grid,.hv-research.hv-interior #testbeds .grid {column-gap:2.25rem}
+.hv-research.hv-interior :is(#positioning,#testbeds) .card {border:0;border-top:1px solid #adc6d3;padding-top:1rem}
+.hv-research.hv-interior :is(#positioning,#testbeds) .card h3,.hv-research.hv-interior #questions .question-card h3 {font-size:clamp(1.125rem,1.55vw,1.4rem);line-height:1.42;font-weight:600;letter-spacing:-.02em}
+.hv-research.hv-interior #questions {margin:0;background:#fff;padding-block:clamp(2.6rem,4vw,4rem)}
+.hv-research.hv-interior #questions .question-label {font-weight:550;letter-spacing:.02em;color:#386d86}
+.hv-research.hv-interior #architecture {background:#f4f7f8;padding-block:clamp(2.45rem,3.8vw,3.7rem)}
+.hv-research.hv-interior #architecture .workflow-list {background:white}
+.hv-research.hv-interior #testbeds {padding-top:clamp(2.45rem,3.8vw,3.7rem)}
+.hv-research.hv-interior #testbeds .status-badge {background:transparent;color:#486879;padding:0;border:0;letter-spacing:.02em}
+.hv-research.hv-interior #testbeds .status-badge::before {display:none}
+@media(max-width:940px){
+ .hv-research.hv-interior #themes .area-gallery {grid-template-columns:1fr;gap:1.85rem}
+ .hv-research.hv-interior #themes .area-study {grid-template-columns:minmax(8rem,24%) minmax(0,1fr);gap:1.5rem;align-items:center}
+}
+@media(max-width:540px){
+ .hv-research.hv-interior #themes {padding:2.65rem 0}
+ .hv-research.hv-interior #themes .area-study {grid-template-columns:minmax(0,32%) minmax(0,1fr);gap:.9rem;align-items:start}
+ .hv-research.hv-interior #themes .area-image {aspect-ratio:1.28;object-fit:contain;background:#f4f4f2}
+ .hv-research.hv-interior #themes .area-text h3 {font-size:1.1rem;margin-bottom:.33rem}
+ .hv-research.hv-interior #themes .area-text p {line-height:1.53}
+ .hv-research.hv-interior #themes .area-image-note {text-align:left}
+ .hv-research.hv-interior #architecture .workflow-list {background:transparent}
+}
