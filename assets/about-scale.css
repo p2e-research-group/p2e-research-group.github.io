@@ -1,0 +1,27 @@
+/* The About illustration needs the full measure: its labels are engineering decisions. */
+.hv-home #about{background:#f4f7f8;padding-block:clamp(44px,5vw,76px)}
+.hv-home #about .scale-wrap{width:min(1120px,calc(100% - 64px));margin-inline:auto}
+.hv-home #about .scale-intro{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:clamp(28px,6vw,90px);align-items:end;margin-bottom:clamp(20px,3vw,35px)}
+.hv-home #about .hv-kicker{margin:0 0 .65rem;color:#286678;text-transform:uppercase;font-family:inherit;font-size:.83rem;font-weight:650;line-height:1.2;letter-spacing:.12em}
+.hv-home #about .hv-kicker:after{display:none}
+.hv-home #about h2{margin:0;color:#203d4b;font-size:clamp(1.8rem,3.05vw,2.8rem);font-weight:580;line-height:1.1;letter-spacing:-.035em;text-wrap:balance}
+.hv-home #about h2 span{display:block}
+.hv-home .scale-intro-copy p{margin:0;color:#3d5663;font-size:1rem;line-height:1.6}
+.hv-home #about .actions{margin:.55rem 0 0;display:flex;flex-wrap:wrap;gap:1.25rem}
+.hv-home .scale-figure{display:block;margin:0;background:#0c2831;box-shadow:0 9px 28px -20px #092b40b3}
+.hv-home .scale-figure picture,.hv-home .scale-figure img{width:100%;height:auto;display:block}
+.hv-home .scale-tools{display:flex;align-items:baseline;justify-content:space-between;gap:1.25rem;margin-top:.8rem;color:#2e5666}
+.hv-home .scale-tools summary,.hv-home .scale-full{font-size:.9rem;line-height:1.55;font-weight:600;cursor:pointer;color:inherit}
+.hv-home .scale-full{white-space:nowrap;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em}
+.hv-home .scale-tools details{max-width:78ch}
+.hv-home .scale-tools ol{padding-left:1.35rem;color:#3d5663}
+.hv-home .scale-tools li{margin:.45rem 0;line-height:1.6}
+.hv-home .scale-origin{margin:1rem 0 0;color:#566977;font-size:.85rem}
+@media(max-width:899px){
+  .hv-home #about .scale-wrap{width:min(570px,calc(100% - 40px))}
+  .hv-home #about .scale-intro{display:block}
+  .hv-home #about h2{font-size:clamp(1.8rem,5vw,2.35rem)}
+  .hv-home .scale-intro-copy{margin-top:1rem}
+}
+@media(max-width:480px){.hv-home #about .scale-wrap{width:calc(100% - 32px)}}
+@media print{.hv-home .scale-tools{display:none}.hv-home .scale-figure{break-inside:avoid}}
