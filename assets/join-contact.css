@@ -1,0 +1,25 @@
+/* A short reading column with a single, clearly identified research contact. */
+.hv-join .join-sheet {padding-block-start:clamp(2rem,4vw,3.25rem)}
+.hv-join .join-heading {padding-bottom:clamp(1.25rem,2.6vw,2rem);border-bottom:1px solid var(--sub-line)}
+.hv-join .join-heading h1 {margin:0;color:var(--sub-ink);font-size:clamp(2.25rem,4.4vw,3.5rem);line-height:1.18;letter-spacing:-.045em}
+.hv-join .join-columns {display:grid;grid-template-columns:minmax(0,1.5fr) minmax(17rem,1fr);align-items:start;gap:clamp(2rem,7vw,6.5rem);margin-top:clamp(1.75rem,4vw,3rem)}
+.hv-join .join-sheet h2 {color:var(--sub-ink);font-weight:650;line-height:1.26;letter-spacing:-.025em;margin:0 0 .65rem;font-size:clamp(1.3rem,2vw,1.65rem)}
+.hv-join .join-sheet p {max-width:64ch;color:var(--sub-muted);font-size:1rem;line-height:1.7;margin:0}
+.hv-join .join-guide section + section {margin-top:clamp(1.6rem,3vw,2.5rem)}
+.hv-join .join-guide p + p {margin-top:.65rem}
+.hv-join .join-sheet a {color:var(--sub-accent);text-decoration:underline;text-underline-offset:.22em;text-decoration-thickness:1px}
+.hv-join .join-sheet a:hover {text-decoration-thickness:2px}
+.hv-join .join-directory {min-width:0;padding:clamp(1.15rem,2.5vw,2rem);background:#f3f7f9;border-top:3px solid var(--sub-accent)}
+.hv-join .join-directory h2 {font-size:1rem;color:var(--sub-accent);margin-bottom:1rem}
+.hv-join .join-directory address {font-style:normal}
+.hv-join .join-directory .join-name {font-size:clamp(1.25rem,2vw,1.5rem);font-weight:650;color:var(--sub-ink);line-height:1.3}
+.hv-join .join-directory p + p {margin-top:.57rem}
+.hv-join .join-mail {display:inline-block;margin-top:1.05rem;font-size:1.05rem;font-weight:600;overflow-wrap:anywhere}
+.hv-join .join-collab {display:grid;grid-template-columns:minmax(11rem,1fr) minmax(0,3fr);gap:1.2rem 2.5rem;margin-top:clamp(2rem,4vw,3.5rem);border-top:1px solid var(--sub-line);padding-top:1.45rem}
+.hv-join .join-collab h2 {font-size:1.15rem;margin:0}
+.hv-join .join-collab p {max-width:66ch}
+.hv-join .join-sheet [id] {scroll-margin-top:5.75rem}
+@media (max-width:720px) {
+  .hv-join .join-columns,.hv-join .join-collab {grid-template-columns:minmax(0,1fr)}
+  .hv-join .join-collab {gap:.45rem}
+}

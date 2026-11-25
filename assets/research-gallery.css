@@ -22,7 +22,6 @@ body.hv-interior.hv-research {padding:0}
 .hv-research.hv-interior #questions {margin:0;background:#fff;padding-block:clamp(2.6rem,4vw,4rem)}
 .hv-research.hv-interior #questions .question-label {font-weight:550;letter-spacing:.02em;color:#386d86}
 .hv-research.hv-interior #architecture {background:#f4f7f8;padding-block:clamp(2.45rem,3.8vw,3.7rem)}
-.hv-research.hv-interior #architecture .workflow-list {background:white}
 .hv-research.hv-interior #testbeds {padding-top:clamp(2.45rem,3.8vw,3.7rem)}
 .hv-research.hv-interior #testbeds .status-badge {background:transparent;color:#486879;padding:0;border:0;letter-spacing:.02em}
 .hv-research.hv-interior #testbeds .status-badge::before {display:none}
@@ -36,5 +35,34 @@ body.hv-interior.hv-research {padding:0}
  .hv-research.hv-interior #themes .area-image {aspect-ratio:180/118;object-fit:contain;background:transparent}
  .hv-research.hv-interior #themes .area-text h3 {font-size:1.1rem;margin-bottom:.33rem}
  .hv-research.hv-interior #themes .area-text p {line-height:1.53}
- .hv-research.hv-interior #architecture .workflow-list {background:transparent}
+}
+
+/* One continuous figure: arrows run between the illustrated stages. */
+#architecture .research-flow {--medal:clamp(5.3rem,8.3vw,7rem);--space:clamp(.65rem,1.5vw,1.6rem);--wire:#56859a;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--space);margin:0;padding:0;list-style:none}
+.research-flow .wf-step {position:relative;min-width:0;text-align:center;padding:0;margin:0;list-style:none}
+.research-flow .wf-mark {position:relative;display:grid;place-items:center;width:var(--medal);height:var(--medal);margin:0 auto 1.25rem;border:1px solid #aec6d1;border-radius:50%;background:#edf4f5}
+.research-flow .wf-mark svg {display:block;width:82%;height:auto;max-width:none}
+.research-flow .wf-mark g {stroke:#31586b;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.research-flow .wf-paper {fill:#fff}
+.research-flow .wf-metal {fill:#dcebef}
+.research-flow .wf-fill {fill:#a5cbd2}
+.research-flow .wf-accent {stroke:#a55d40}
+.research-flow .wf-muted {stroke:#b2c8cf}
+.research-flow .wf-index {position:absolute;left:0;bottom:0;border:2px solid #f4f7f8;border-radius:25px;min-width:1.88rem;padding:.17rem .3rem;background:#254f63;color:white;font:600 .72rem/1.15 system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.04em;text-align:center}
+.research-flow .wf-step:not(:last-child)::before,.research-flow .wf-step:not(:last-child)::after {content:"";position:absolute;pointer-events:none}
+.research-flow .wf-step:not(:last-child)::before {top:calc(var(--medal)/2);left:calc(50% + var(--medal)/2);width:calc(100% + var(--space) - var(--medal) - 4px);border-top:2px solid var(--wire)}
+.research-flow .wf-step:not(:last-child)::after {top:calc(var(--medal)/2 - 3px);left:calc(150% + var(--space) - var(--medal)/2 - 12px);width:8px;height:8px;border-top:2px solid var(--wire);border-right:2px solid var(--wire);transform:rotate(45deg)}
+.hv-research #architecture .wf-copy h3 {margin:0 auto .4rem;max-width:17ch;color:#243e4e;font-size:clamp(1.02rem,1.4vw,1.22rem);line-height:1.3;letter-spacing:-.02em;overflow-wrap:normal}
+.hv-research #architecture .wf-copy p {margin:0 auto;max-width:24ch;color:#4c616e;font-size:1rem;line-height:1.53}
+@media(max-width:880px) {
+ #architecture .research-flow {--medal:4.7rem;--space:1.65rem;grid-template-columns:minmax(0,1fr);max-width:34rem;margin-inline:auto}
+ .research-flow .wf-step {display:grid;grid-template-columns:var(--medal) minmax(0,1fr);gap:clamp(.85rem,3.8vw,1.6rem);align-items:start;text-align:left}
+ .research-flow .wf-mark {margin:0}
+ .research-flow .wf-copy {align-self:center}
+ .hv-research #architecture .wf-copy :is(h3,p) {max-width:none;margin-inline:0}
+ .research-flow .wf-step:not(:last-child)::before {left:calc(var(--medal)/2);top:var(--medal);height:calc(100% + var(--space) - var(--medal) - 4px);width:0;border:0;border-left:2px solid var(--wire)}
+ .research-flow .wf-step:not(:last-child)::after {left:calc(var(--medal)/2 - 3px);top:calc(100% + var(--space) - 12px);transform:rotate(135deg)}
+}
+@media print {
+ #architecture .wf-step {break-inside:avoid}
 }
