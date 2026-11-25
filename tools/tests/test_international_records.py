@@ -65,7 +65,7 @@ class InternationalRecordsTests(unittest.TestCase):
             check.extract_linked_patents(changed)
 
     def test_visible_identifiers_and_statuses_cannot_disagree_with_data(self):
-        for old,new in [('>US11674720B2</a>','>US99999999B2</a>'),('>등록공보</span>','>공개</span>')]:
+        for old,new in [('>US11674720B2</a>','>US99999999B2</a>'),('class="ip-stage granted"><span class="lang-en">Granted', 'class="ip-stage granted"><span class="lang-en">Published')]:
             with self.subTest(old=old), self.assertRaises(check.ExtractionError):
                 check.extract_linked_patents(self.source.replace(old,new,1))
 
