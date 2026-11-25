@@ -1,0 +1,12 @@
+/* A quiet, two-column directory of research paths; the contact panel stays separate. */
+.hv-join .join-sheet .join-heading p {max-width:58ch;font-size:clamp(1.05rem,1.7vw,1.25rem);line-height:1.55;margin:.65rem 0 0}
+.hv-join .join-positions {margin-top:clamp(1.75rem,4vw,3rem)}
+.hv-join .join-position-list {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(1.6rem,6vw,5rem);margin-top:1.05rem}
+.hv-join .join-position-list section {min-width:0;border-top:1px solid var(--sub-line);padding:1.05rem 0 1.2rem}
+.hv-join .join-position-list h3 {font-size:1.15rem;font-weight:650;letter-spacing:-.015em;line-height:1.35;margin:0 0 .45rem;color:var(--sub-ink)}
+.hv-join .join-position-list p {max-width:51ch}
+.hv-join .join-sheet .join-openings {max-width:none;border-block:1px solid var(--sub-line);padding:.8rem 0;font-size:1rem}
+@media (max-width:720px) {
+  .hv-join .join-position-list {grid-template-columns:minmax(0,1fr)}
+  .hv-join .join-position-list section {padding:.85rem 0 1rem}
+}
