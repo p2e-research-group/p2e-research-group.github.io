@@ -33,3 +33,6 @@ body.hv-lab{background:white;color:var(--hv-text);font-family:"Segoe UI","Apple 
 .hv-home .hv-system-figure img{display:block;width:100%;height:auto}
 @media(max-width:650px){.hv-banner [data-frame="1"] img{object-position:74% center}}
 .hv-home .hv-system-figure picture{display:block}
+/* The public site uses a light footer, so keep the wordmark in its original colors. */
+.hv-lab .footer img{filter:none}
+.hv-lab .footer :is(.copyright,.footer-origin){color:#506674}

@@ -278,16 +278,34 @@ def extract_publications(source: str) -> list[str]:
 
 def extract_center(source: str) -> dict[str, str]:
     root = Document(source).root
-    summary = one(by_class(root, "profile-facts"), "people.html PI profile summary")
     heading_tags = {"b", "strong", "h2", "h3", "h4"}
 
     def appointment_heading(element):
         return element.tag in heading_tags and normalize(element.text()).upper() in {
             "CURRENT APPOINTMENT", "현재 소속"}
 
-    block = one((e for e in by_class(summary, "profile-fact")
-                 if any(appointment_heading(h) for h in e.elements())),
-                "people.html CURRENT APPOINTMENT block")
+    marked = [e for e in root.elements() if "data-current-appointment" in e.attrs]
+    summaries = by_class(root, "profile-facts")
+    if marked and summaries:
+        raise ExtractionError("people.html: both marked and legacy CURRENT APPOINTMENT blocks present")
+    if marked:
+        role = one(marked, "people.html marked PI appointment")
+        card = one(by_class(root, "pi-card"), "people.html PI card")
+        if (not role.has_class("role") or role.attrs["data-current-appointment"] != "true"
+                or not any(e is role for e in card.elements())):
+            raise ExtractionError("people.html: current appointment must mark the PI card's role")
+        # Hidden values or a hidden wrapper cannot be the displayed appointment.
+        for node in root.elements():
+            if "hidden" not in node.attrs and node.attrs.get("aria-hidden", "").lower() != "true":
+                continue
+            if node is role or any(e is role for e in node.elements()) or any(e is node for e in role.elements()):
+                raise ExtractionError("people.html: marked PI appointment contains hidden content")
+        block = role
+    else:
+        summary = one(summaries, "people.html PI profile summary")
+        block = one((e for e in by_class(summary, "profile-fact")
+                      if any(appointment_heading(h) for h in e.elements())),
+                     "people.html CURRENT APPOINTMENT block")
     result = {}
     english_only = english_page(root)
     if english_only:
