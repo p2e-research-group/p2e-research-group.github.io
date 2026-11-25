@@ -7,8 +7,8 @@
   const position = banner.querySelector('[data-position]');
   const announcement = banner.querySelector('[data-slide-status]');
   const captions = [
-    'Illustrative exterior view of a process plant',
-    'Illustrative plant interior with a heat exchanger'
+    'Image 1 of 2: Process plant',
+    'Image 2 of 2: A digital twin of an integrated process plant'
   ];
   if (frames.length < 2 || !controls || !position || !announcement) return;
 
@@ -19,6 +19,7 @@
     position.textContent = (current + 1) + ' / ' + frames.length;
     announcement.textContent = captions[current];
   }
+  position.hidden = false;
   controls.hidden = false;
   controls.querySelectorAll('[data-step]').forEach((button) => {
     button.addEventListener('click', () => move(Number(button.dataset.step)));

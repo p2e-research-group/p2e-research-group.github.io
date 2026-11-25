@@ -1,0 +1,76 @@
+/* The CV and each member record share the site's text size and heading hierarchy. */
+.hv-people {
+  --people-ink: #293e4b;
+  --people-copy: #405866;
+  --people-accent: #245d7f;
+  --people-rule: #d8e1e6;
+}
+.hv-people #pi .pi-biography,
+.hv-people #pi .pi-continuity {font-family:inherit;color:var(--people-copy)}
+.hv-people #pi .pi-section-heading {
+  color:var(--people-accent);font:inherit;font-size:clamp(1.22rem,1.8vw,1.5rem);
+  font-weight:560;line-height:1.35;letter-spacing:-.015em;margin:0 0 1rem;
+}
+.hv-people #pi .pi-biography {gap:1.8rem clamp(1.8rem,4vw,3.5rem)}
+.hv-people #pi .cv-entry {
+  grid-template-columns:7rem minmax(0,1fr);gap:.4rem 1rem;
+  padding:1rem 0;border-color:var(--people-rule)
+}
+.hv-people #pi .cv-entry h4,
+.hv-people #pi .trajectory-step h4 {
+  color:var(--people-ink);font-size:1.075rem;font-weight:620;
+  line-height:1.45;letter-spacing:-.01em;margin:.1rem 0 .3rem;
+}
+.hv-people #pi :is(.cv-entry p,.profile-fact > span,.professional-service-item p,.trajectory-step p) {
+  color:var(--people-copy);font:inherit;font-size:1rem;line-height:1.65;letter-spacing:normal
+}
+.hv-people #pi :is(.cv-period,.professional-service-item b,.profile-fact b) {
+  color:var(--people-accent);font:inherit;font-size:.92rem;line-height:1.6;
+  font-weight:620;letter-spacing:.012em
+}
+.hv-people #pi .cv-period {font-variant-numeric:tabular-nums}
+.hv-people #pi .profile-facts {gap:0 2rem}
+.hv-people #pi .profile-fact {
+  background:none;border:0;border-bottom:1px solid var(--people-rule);padding:1rem 0
+}
+.hv-people #pi .pi-facts-disclosure > summary {
+  font-size:1.05rem;font-weight:550;line-height:1.5;color:var(--people-accent)
+}
+.hv-people #pi .pi-service-block .professional-service-grid {gap:0 2rem}
+.hv-people #pi .professional-service-item {padding:1rem 0;border-color:var(--people-rule)}
+.hv-people #pi .pi-trajectory {gap:1.6rem}
+.hv-people #pi .trajectory-step {
+  background:none;border:0;border-top:1px solid var(--people-rule);padding:1rem 0 .2rem;
+}
+.hv-people #pi .trajectory-step .card-number {
+  display:block;width:auto;height:auto;background:none;color:var(--people-accent);
+  font-size:.92rem;font-weight:600;letter-spacing:.02em;margin:0 0 .4rem
+}
+.hv-people #researchers .researcher-grid {gap:1.5rem clamp(1.25rem,3vw,2.6rem)}
+.hv-people #researchers .researcher-card {padding:1.25rem 0 .5rem;min-width:0}
+.hv-people #researchers .researcher-card h3 {
+  font-size:clamp(1.32rem,1.75vw,1.5rem);color:var(--people-ink);
+  margin:0 0 .85rem;font-weight:620
+}
+.hv-people .member-facts {margin:0 0 1.15rem;padding:0 0 .9rem;border-bottom:1px solid var(--people-rule)}
+.hv-people .member-facts > div {
+  display:grid;grid-template-columns:4.1rem minmax(0,1fr);gap:.35rem .55rem;
+  align-items:baseline;margin:.2rem 0;
+}
+.hv-people .member-facts dt {
+  color:var(--people-accent);font-size:.875rem;font-weight:620;line-height:1.5
+}
+.hv-people .member-facts dd {margin:0;color:var(--people-ink);font-size:1rem;line-height:1.55}
+.hv-people #researchers .researcher-card > strong {
+  display:block;color:var(--people-accent);font-size:1.05rem;
+  font-weight:560;line-height:1.5
+}
+.hv-people #researchers .researcher-card > p {color:var(--people-copy);margin:.4rem 0 0}
+@media (max-width:780px) {
+  .hv-people #researchers .researcher-grid {grid-template-columns:1fr}
+  .hv-people #pi .pi-biography {grid-template-columns:1fr;gap:1rem}
+}
+@media (max-width:600px) {
+  .hv-people #pi .cv-entry {grid-template-columns:1fr;gap:.12rem}
+  .hv-people #pi .pi-trajectory,.hv-people #pi .pi-service-block .professional-service-grid {grid-template-columns:1fr}
+}
