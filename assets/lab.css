@@ -32,3 +32,5 @@ body.hv-lab{background:white;color:var(--hv-text);font-family:"Segoe UI","Apple 
 .hv-home .hv-system-figure{margin:0;align-self:center}
 .hv-home .hv-system-figure img{display:block;width:100%;height:auto}
 @media(max-width:650px){.hv-banner [data-frame="1"] img{object-position:74% center}}
+.hv-home .hv-system-figure picture{display:block}
+.hv-home .hv-system-figure figcaption{margin:.65rem 0 0;padding-left:.75rem;border-left:2px solid #85aebb;color:#425b69;font-size:.92rem;line-height:1.45;text-align:left}
