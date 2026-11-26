@@ -16,14 +16,16 @@ body.hv-lab{background:white;color:var(--hv-text);font-family:"Segoe UI","Apple 
 .hv-lab {--p2e-content-width:min(1160px, calc(100% - 80px))}
 .hv-lab .site-header .nav {width:var(--p2e-content-width)}
 .hv-lab .site-header .brand {
-  display:flex;align-items:center;gap:clamp(10px,1.1vw,16px);
-  min-width:0;min-height:56px;flex:0 1 auto;
+  /* Align the name to the P2E letters; the pipework rises above their cap line. */
+  display:flex;align-items:flex-end;gap:clamp(10px,1.1vw,16px);
+  min-width:0;min-height:44px;flex:0 1 auto;
 }
 .hv-lab .site-header .brand .brand-icon {
   display:block;flex:none;width:112px;height:auto;max-width:none;object-fit:contain;
 }
 .hv-lab .site-header .brand-title {
   display:block;max-width:none;white-space:normal;color:#0b3768;text-align:left;
+  margin-block-end:-.1em; /* Compensate for the text line box below the visible descenders. */
   font-size:1.05rem;font-weight:600;letter-spacing:normal;line-height:1.22;
 }
 .hv-lab .brand-field-end {white-space:nowrap}
