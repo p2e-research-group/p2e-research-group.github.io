@@ -33,9 +33,10 @@ REQUIRED_ASSETS = (
     "assets/slide.js",
     "assets/lab.css",
     "assets/interiors.css",
-    "assets/p2e-favicon-v1.svg",
-    "assets/p2e-wordmark-v1.svg",
-    "assets/p2e-og-v1.png",
+    "assets/p2e-favicon-v2.svg",
+    "assets/p2e-mark-v2.svg",
+    "assets/p2e-lockup-v2.svg",
+    "assets/p2e-og-v2.png",
     "assets/han-sol-jung.jpg",
 )
 PROHIBITED_PATHS = ("group.html", "news.html", "contact.html", "assets/i18n")
@@ -194,7 +195,7 @@ def main() -> int:
             errors.append(f"{rel}: canonical must be {expected!r}")
         if parser.og_urls != [expected]:
             errors.append(f"{rel}: og:url must be {expected!r}")
-        expected_image = BASE_URL + "assets/p2e-og-v1.png"
+        expected_image = BASE_URL + "assets/p2e-og-v2.png"
         if parser.og_images != [expected_image]:
             errors.append(f"{rel}: og:image must be {expected_image!r}")
         # data-lang="en" is also the CSS fallback: the complete English site must
