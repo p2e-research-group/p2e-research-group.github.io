@@ -4,6 +4,13 @@
   const menuButton = document.querySelector('.nav-toggle');
   const header = document.querySelector('.site-header');
   const mobileMenu = window.matchMedia('(max-width: 1080px)');
+  const publicationsMenu = menu?.querySelector('.nav-publications');
+  const publicationsToggle = publicationsMenu?.querySelector('summary');
+  let openedOnHover = false;
+  const closePublications = () => {
+    if (publicationsMenu) publicationsMenu.open = false;
+    openedOnHover = false;
+  };
   const syncHeaderOffset = () => {
     if (header) root.style.setProperty('--header-offset', `${Math.ceil(header.getBoundingClientRect().height)}px`);
   };
@@ -13,6 +20,7 @@
 
   const setMenu = (open, restoreFocus = false) => {
     const wasOpen = menu?.classList.contains('open');
+    if (!open) closePublications();
     menu?.classList.toggle('open', open);
     menuButton?.setAttribute('aria-expanded', String(open));
     menuButton?.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
@@ -20,6 +28,25 @@
   };
 
   if (menu && menuButton) {
+    if (publicationsMenu && publicationsToggle) {
+      // Native <details> handles tap, keyboard activation and the no-script path.
+      publicationsMenu.addEventListener('pointerenter', (event) => {
+        if (!mobileMenu.matches && event.pointerType === 'mouse' && !publicationsMenu.open) {
+          publicationsMenu.open = true;
+          openedOnHover = true;
+        }
+      });
+      publicationsMenu.addEventListener('pointerleave', () => {
+        if (openedOnHover && !publicationsMenu.contains(document.activeElement)) closePublications();
+      });
+      publicationsToggle.addEventListener('click', (event) => {
+        if (openedOnHover && event.detail > 0) event.preventDefault();
+        openedOnHover = false;
+      });
+      publicationsMenu.addEventListener('focusout', (event) => {
+        if (event.relatedTarget instanceof Node && !publicationsMenu.contains(event.relatedTarget)) closePublications();
+      });
+    }
     let focusWasInMenu = false;
     document.addEventListener('focusin', (event) => {
       focusWasInMenu = event.target instanceof Node && menu.contains(event.target);
@@ -32,13 +59,21 @@
     menu.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setMenu(false)));
     root.classList.add('nav-ready');
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && menu.classList.contains('open')) {
+      if (event.key !== 'Escape') return;
+      if (publicationsMenu?.open) {
+        const focusWasInside = publicationsMenu.contains(document.activeElement);
+        closePublications();
+        if (focusWasInside) publicationsToggle?.focus();
+        event.preventDefault();
+      } else if (menu.classList.contains('open')) {
         event.preventDefault();
         setMenu(false, true);
       }
     });
     document.addEventListener('click', (event) => {
-      if (event.target instanceof Node && header && !header.contains(event.target)) setMenu(false);
+      if (!(event.target instanceof Node)) return;
+      if (header && !header.contains(event.target)) setMenu(false);
+      else if (!publicationsMenu?.contains(event.target)) closePublications();
     });
     header?.addEventListener('focusout', (event) => {
       if (event.relatedTarget instanceof Node && !header.contains(event.relatedTarget)) setMenu(false);

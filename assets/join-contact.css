@@ -20,7 +20,7 @@
 .hv-join .collab-heading h2 {margin:0}
 .hv-join .collab-list {list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 1.5rem;margin:0;padding:0}
 .hv-join .collab-list li {min-width:0;border-bottom:1px solid var(--sub-line)}
-.hv-join .collab-list a {height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.6rem;padding:1.1rem .6rem;color:var(--sub-ink);text-decoration:none}
+.hv-join .collab-list :is(a,.collab-entry) {height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.6rem;padding:1.1rem .6rem;color:var(--sub-ink);text-decoration:none}
 .hv-join .collab-list a:hover .collab-name,.hv-join .collab-list a:focus-visible .collab-name {color:var(--sub-accent);text-decoration:underline;text-underline-offset:.2em}
 .hv-join .collab-list a:focus-visible {outline:2px solid var(--sub-accent);outline-offset:2px}
 .hv-join .collab-mark {width:100%;height:3.15rem;display:flex;align-items:center}
@@ -30,8 +30,8 @@
 .hv-join .collab-program a {flex-direction:row;align-items:center;justify-content:flex-start;gap:1.5rem 2.25rem;flex-wrap:wrap}
 .hv-join .collab-program img {width:min(100%,18.5rem);height:auto}
 .hv-join .join-collab .collab-contact {margin-top:1.25rem}
-.hv-join .collab-text-link .collab-name {font-size:1.08rem}
-.hv-join .collab-text-link small {color:var(--sub-muted);font-size:.9rem}
+.hv-join .collab-text .collab-name {font-size:1.08rem}
+.hv-join .collab-text small {color:var(--sub-muted);font-size:.9rem}
 .hv-join .join-sheet [id] {scroll-margin-top:5.75rem}
 @media (max-width:720px) {
  .hv-join .join-columns {grid-template-columns:minmax(0,1fr)}
@@ -40,9 +40,9 @@
 }
 @media (max-width:460px) {
  .hv-join .collab-list {grid-template-columns:minmax(0,1fr)}
- .hv-join .collab-list a {padding:.9rem .3rem}
- .hv-join .collab-list li:not(.collab-program) a {flex-direction:row;justify-content:flex-start;align-items:center;gap:1.1rem;min-height:5rem}
+ .hv-join .collab-list :is(a,.collab-entry) {padding:.9rem .3rem}
+ .hv-join .collab-list .collab-entry {flex-direction:row;justify-content:flex-start;align-items:center;gap:1.1rem;min-height:5rem}
  .hv-join .collab-mark {flex:0 0 36%;height:2.75rem}
- .hv-join .collab-text-link a {flex-wrap:wrap}
+ .hv-join .collab-text .collab-entry {flex-wrap:wrap}
  .hv-join .collab-program img {width:min(100%,16rem)}
 }
