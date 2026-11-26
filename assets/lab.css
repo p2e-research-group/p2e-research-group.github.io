@@ -36,3 +36,60 @@ body.hv-lab{background:white;color:var(--hv-text);font-family:"Segoe UI","Apple 
 /* The public site uses a light footer, so keep the wordmark in its original colors. */
 .hv-lab .footer img{filter:none}
 .hv-lab .footer :is(.copyright,.footer-origin){color:#506674}
+
+/* Publications is a disclosure in the masthead and a pair of ordinary page links. */
+.hv-lab .nav-publications {position:relative;margin:0}
+.hv-lab .nav-publications > summary {
+  display:flex;align-items:center;gap:.45rem;min-height:44px;padding:28px 0 24px;
+  list-style:none;cursor:pointer;color:#40525e;
+  font-family:inherit;font-size:15px;font-weight:500;line-height:inherit;
+}
+.hv-lab .nav-publications > summary::-webkit-details-marker {display:none}
+.hv-lab .nav-publications > summary::after {
+  content:"";width:.4rem;height:.4rem;border-right:1.5px solid;border-bottom:1.5px solid;
+  transform:translateY(-.12em) rotate(45deg);
+}
+.hv-lab .nav-publications[open] > summary::after {transform:translateY(.1em) rotate(225deg)}
+.hv-lab .nav-publications:is([open],.current-section) > summary {color:#184966}
+.hv-lab .nav-publications.current-section > summary {font-weight:650}
+.hv-lab .nav-publications:not([open]) > .publication-menu {display:none}
+.hv-lab .publication-menu {
+  display:grid;position:absolute;inset-block-start:100%;inset-inline-start:0;z-index:1;
+  min-width:11.5rem;padding:.35rem 0;background:#fff;border:1px solid #d6e0e6;
+  border-top:2px solid var(--lab-accent);box-shadow:0 8px 20px #233c4c16;
+}
+.hv-lab .publication-menu a {
+  display:flex;align-items:center;min-height:44px;padding:.55rem 1.1rem;
+  border-radius:0;font-size:1rem;line-height:1.45;
+}
+.hv-lab .publication-menu a::after {display:none}
+.hv-lab .publication-menu a:is(:hover,:focus-visible,[aria-current="page"]) {background:#eef4f7;color:#184966}
+.hv-lab .publication-menu a:focus-visible {outline-offset:-3px}
+.hv-lab .footer-links {align-items:start;gap:1rem 1.75rem}
+.hv-lab .footer-pages,.hv-lab .footer-publications {display:grid;align-content:start;justify-items:start}
+.hv-lab .footer-publications > span {padding:7px 0;font-weight:600}
+.hv-lab .footer-publications a[aria-current="page"] {text-decoration:underline;text-underline-offset:.22em}
+.hv-lab .publication-bar {
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0 1rem;
+  margin:1.75rem 0 0;border-block:1px solid var(--sub-line);
+}
+.hv-lab .publication-tabs,.hv-lab .publication-jumps {display:flex;align-items:center;flex-wrap:wrap}
+.hv-lab .publication-tabs a,.hv-lab .publication-jumps a {display:inline-flex;min-height:46px;align-items:center}
+.hv-lab .publication-tabs {gap:1.65rem}
+.hv-lab .publication-tabs a {color:var(--sub-muted);border-bottom:2px solid transparent;font-size:1rem}
+.hv-lab .publication-tabs a[aria-current="page"] {border-color:var(--lab-accent);color:var(--sub-ink);font-weight:650}
+.hv-lab .publication-jumps {gap:1.1rem}
+.hv-lab .publication-jumps a {font-size:.9375rem;color:var(--lab-accent)}
+.hv-lab .publication-bar a:hover {text-decoration:underline;text-underline-offset:.25em}
+@media(max-width:1080px) {
+  .hv-lab .nav-publications > summary {padding:12px 0;font-size:1rem;justify-content:space-between}
+  .hv-lab .publication-menu {
+    position:static;min-width:0;padding:0 0 .25rem .8rem;margin:0 0 .45rem .15rem;
+    border:0;border-inline-start:2px solid #b9cdd8;box-shadow:none;
+  }
+  .hv-lab .publication-menu a {padding:.55rem .7rem}
+}
+@media(max-width:480px) {
+  .hv-lab .publication-jumps {flex-basis:100%;border-top:1px solid #e6ecef}
+}
+@media print {.hv-lab .publication-bar {display:none}}
