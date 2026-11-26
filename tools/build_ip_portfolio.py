@@ -176,11 +176,11 @@ def render(source, data):
             members.append(f'<li class="ip-portfolio-invention anchor-target"{anchor}><a class="ip-invention-link" href="#{domestic_anchors[number]}"><span class="ip-invention-number">{shared_label("특허 "+str(number),"Record "+str(number))}</span>{title_html}</a>'+render_badges([number],domestic_stages,data['records'])+'</li>')
         cards.append(f'<article class="family-card" id="{card["id"]}"><div class="eyebrow">{english(card["application_en"])}</div><h3>{shared_label(card["ko"],card["en"])}</h3><p>{english(card["description_en"])}</p><details class="hv-family-disclosure"><summary>Inventions ({len(members)})</summary><ul class="ip-portfolio-inventions">'+''.join(members)+'</ul></details></article>')
     main = f'''<main id="main-content">
-  <div class="hv-trail"><div class="shell"><a href="index.html">Home</a><span class="hv-chevron" aria-hidden="true"></span><span aria-current="page">Intellectual property</span></div></div>
+  <div class="hv-trail"><div class="shell"><a href="index.html">Home</a><span class="hv-chevron" aria-hidden="true"></span><span>Publications</span><span class="hv-chevron" aria-hidden="true"></span><span aria-current="page">Patent</span></div></div>
   <section class="page-hero"><div class="shell">
-    <h1>{english('Patent portfolio')}</h1>
+    <h1>{english('Patents')}</h1>
     <p>{english('Patents naming Han Sol Jung as an inventor in prior and collaborative research. Korean records are paired with their corresponding international publications.')}</p>
-    <div class="page-nav"><a href="#families">{english('Technology areas')}</a><a href="#registry">{english('Full patent list')}</a></div>
+    <div class="publication-bar"><nav class="publication-tabs" aria-label="Publication categories"><a href="publications.html">Paper</a><a href="ip.html" aria-current="page">Patent</a></nav><div class="publication-jumps"><a href="#families">{english('Technology areas')}</a><a href="#registry">{english('Full patent list')}</a></div></div>
     <div class="ip-metrics">{metric_html}</div>
     <p class="ip-count-note">{english('Each application is counted once per jurisdiction. PCT publications are counted separately from overseas grants.')} {english('International records checked: ')}<time datetime="{data['checked_on']}">{data['checked_on']}</time></p>
   </div></section>
