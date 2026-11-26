@@ -30,7 +30,11 @@
 <header class="site-header">
   <div class="shell nav">
     <a class="brand" href="index.html" aria-label="P2E Research Group home"><img class="brand-icon" src="assets/p2e-wordmark-v1.svg" width="248" height="46" alt=""><span class="brand-title" aria-hidden="true">P2E Research Group</span></a>
-    <nav id="main-menu" class="menu" aria-label="Main navigation"><a href="index.html"><span class="lang-en">HOME</span></a><a href="research.html" aria-current="page"><span class="lang-en">RESEARCH</span></a><a href="people.html"><span class="lang-en">PEOPLE</span></a><a href="publications.html"><span class="lang-en">PUBLICATIONS</span></a><a href="ip.html"><span class="lang-en">IP</span></a><a href="join.html"><span class="lang-en">JOIN US</span></a></nav>
+    <nav id="main-menu" class="menu" aria-label="Main navigation"><a href="index.html"><span class="lang-en">HOME</span></a><a href="research.html" aria-current="page"><span class="lang-en">RESEARCH</span></a><a href="people.html"><span class="lang-en">PEOPLE</span></a>
+      <details class="nav-publications"><summary>PUBLICATIONS</summary>
+        <div class="publication-menu"><a href="publications.html">Paper</a><a href="ip.html">Patent</a></div>
+      </details>
+      <a href="join.html"><span class="lang-en">JOIN US</span></a></nav>
 
     <button class="nav-toggle" type="button" aria-label="Open navigation" aria-controls="main-menu" aria-expanded="false">☰</button>
   </div>
@@ -122,10 +126,8 @@
         <small><span class="lang-en">Senior Researcher, KRICT</span><br><a href="mailto:hsjung@krict.re.kr">hsjung@krict.re.kr</a></small>
       </div>
       <div class="footer-links">
-        <a href="index.html"><span class="lang-en">HOME</span></a><a href="research.html"><span class="lang-en">RESEARCH</span></a>
-        <a href="people.html"><span class="lang-en">PEOPLE</span></a>
-        <a href="publications.html"><span class="lang-en">PUBLICATIONS</span></a><a href="ip.html"><span class="lang-en">IP</span></a>
-        <a href="join.html"><span class="lang-en">JOIN US</span></a>
+        <div class="footer-pages"><a href="index.html">HOME</a><a href="research.html">RESEARCH</a><a href="people.html">PEOPLE</a><a href="join.html">JOIN US</a></div>
+        <div class="footer-publications" role="group" aria-labelledby="footer-publications-title"><span id="footer-publications-title">PUBLICATIONS</span><a href="publications.html">Paper</a><a href="ip.html">Patent</a></div>
       </div>
     </div>
     <div class="copyright">© P2E Research Group<span class="footer-origin"><span class="lang-en">Established at KRICT in August 2025</span></span></div>
